@@ -62,6 +62,39 @@ def test_validate_vessel_config_not_dict():
         validate_vessel_config(["this", "is", "a", "list"])
 
 
+def test_validate_vessel_config_extra_keys():
+    """Test that vessel config with extra keys passes as expected."""
+    base_config = {
+        "vessel_type": "SDA",
+        "max_speed": 20,
+        "unit": "km/hr",
+    }
+    config_with_extra = base_config.copy()
+    config_with_extra["additional_field"] = "some value"
+
+    validate_vessel_config(config_with_extra)
+
+
+def test_validate_vessel_config_empty_dict():
+    """Test ValidationError raised on empty vessel config dict."""
+    with pytest.raises(ValidationError):
+        validate_vessel_config({})
+
+
+@pytest.mark.parametrize(
+    "invalid_config, match_str",
+    [
+        ({"vessel_type": None, "max_speed": 26.5, "unit": "km/hr"}, "vessel_type"),
+        ({"vessel_type": "SDA", "max_speed": None, "unit": "km/hr"}, "max_speed"),
+        ({"vessel_type": "SDA", "max_speed": 26.5, "unit": None}, "unit"),
+    ],
+)
+def test_validate_vessel_config_null_fields(invalid_config, match_str):
+    """Test ValidationError for null required fields in vessel config."""
+    with pytest.raises(ValidationError, match=match_str):
+        validate_vessel_config(invalid_config)
+
+
 # Route config tests
 def test_validate_route_config_file():
     """Test that route config example file validates successfully."""
