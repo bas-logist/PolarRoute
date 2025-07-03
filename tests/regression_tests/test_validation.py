@@ -78,7 +78,7 @@ def test_validate_vessel_config_file():
     ],
 )
 def test_validate_vessel_config_invalid(config, match):
-    """Test that ValidationError is raised for missing or invalid vessel config fields."""
+    """Test that ValidationError is raised for missing/invalid fields."""
     with pytest.raises(ValidationError, match=match):
         validate_vessel_config(config)
 
@@ -135,7 +135,7 @@ def test_validate_route_config_file():
     ],
 )
 def test_validate_route_config_invalid(config, match):
-    """Test that ValidationError is raised for invalid route config structure or enums."""
+    """Test that ValidationError is raised for invalid structure or enums."""
     with pytest.raises(ValidationError, match=match):
         validate_route_config(config)
 
@@ -214,13 +214,13 @@ def test_validate_waypoints_not_csv():
 
 
 def test_validate_waypoints_empty_df():
-    """Test that an empty DataFrame raises AssertionError on missing columns."""
+    """Test that empty DataFrame raises AssertionError on missing columns."""
     with pytest.raises(AssertionError, match="Expected the following columns"):
         validate_waypoints(pd.DataFrame())
 
 
 def test_validate_waypoints_missing_source_and_destination():
-    """Test that missing both source and destination raises an error mentioning one of them."""
+    """Test that missing both source and destination raises an error."""
     df = pd.read_csv(
         StringIO(
             """
@@ -236,7 +236,7 @@ WP1,60.0,-45.0,,
 
 
 def test_validate_waypoints_empty_with_columns():
-    """Test that a DataFrame with correct columns but no rows raises source/destination error."""
+    """Test that empty DataFrame with correct columns raises error."""
     df = pd.DataFrame(columns=WAYPOINTS_COLUMNS)
     with pytest.raises(AssertionError, match="No source waypoint defined!"):
         validate_waypoints(df)
