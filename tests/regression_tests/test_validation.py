@@ -141,6 +141,25 @@ def test_validate_route_config_not_dict():
         validate_route_config(["this", "is", "a", "list"])
 
 
+def test_validate_route_config_extra_keys():
+    """Test route config with extra keys passes as expected."""
+    base_config = {
+        "objective_function": "fuel_use",
+        "path_variables": ["lat", "lon"],
+        "vector_names": ["current_u", "current_v"],
+    }
+    config_with_extra = base_config.copy()
+    config_with_extra["additional_field"] = "some value"
+
+    validate_route_config(config_with_extra)
+
+
+def test_validate_route_config_empty_dict():
+    """Test ValidationError raised on empty route config dict."""
+    with pytest.raises(ValidationError):
+        validate_route_config({})
+
+
 # Waypoints validation tests
 def test_validate_waypoints_file():
     """Test that example waypoints CSV validates successfully."""
@@ -194,3 +213,51 @@ def test_validate_waypoints_not_csv():
     """Test TypeError raised when waypoints input is not a DataFrame."""
     with pytest.raises(TypeError):
         validate_waypoints(["this", "is", "a", "list"])
+
+
+def test_validate_waypoints_empty_df():
+    """Test AssertionError raised on completely empty DataFrame."""
+    empty_df = pd.DataFrame()
+    with pytest.raises(AssertionError):
+        validate_waypoints(empty_df)
+
+
+def test_validate_waypoints_empty_rows():
+    """Test validate_waypoints accepts empty DataFrame with correct columns."""
+    df = pd.DataFrame(columns=waypoints_columns)
+
+    # This should fail, because no source and destination are present
+    with pytest.raises(AssertionError, match="No source waypoint defined!"):
+        validate_waypoints(df)
+
+
+def test_validate_waypoints_extra_columns():
+    """Test validate_waypoints ignores extra columns and validates required ones."""
+    csv_data = StringIO(
+        """
+Name,Lat,Long,Source,Destination,ExtraCol
+WP1,60.0,-45.0,X,X,something
+WP2,61.0,-44.0,,X,another
+"""
+    )
+    df = pd.read_csv(csv_data)
+
+    # Passing as extra columns are ignored
+    validate_waypoints(df)
+
+
+def test_validate_waypoints_missing_source_and_destination():
+    """Test AssertionError when both source and destination are missing."""
+    csv_data = StringIO(
+        """
+Name,Lat,Long,Source,Destination
+WP1,60.0,-45.0,,
+"""
+    )
+    df = pd.read_csv(csv_data)
+    with pytest.raises(AssertionError) as excinfo:
+        validate_waypoints(df)
+
+    # Check error mentions source and/or destination missing
+    error_msg = str(excinfo.value)
+    assert "source" in error_msg.lower() or "destination" in error_msg.lower()
