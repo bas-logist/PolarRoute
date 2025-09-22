@@ -36,6 +36,7 @@ class SDA(AbstractShip):
 
         if all(k in cellbox.agg_data for k in ("SIC", "thickness", "density")):
             logging.debug("Adjusting speed according to ice resistance model")
+
             if cellbox.agg_data['SIC'] == 0.0:
                 ice_resistance = 0.
                 speed = self.max_speed
@@ -52,6 +53,12 @@ class SDA(AbstractShip):
                     speed = self.max_speed
         else:
             logging.debug("No resistance data available, no speed adjustment necessary")
+
+
+        
+        if ('mpa' in cellbox.agg_data.keys()) and (cellbox.agg_data['mpa']!=0.0):
+            print("MPA Ship")
+            speed = np.min([speed,cellbox.agg_data['mpa']])
 
         logging.debug("Creating speed array")
         cellbox.agg_data['speed'] = [speed for x in range(8)]
