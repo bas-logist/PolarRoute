@@ -33,7 +33,7 @@ keywords= ["Polar Science",
 dynamic = ["version", "dependencies", "optional-dependencies"]
 
 [tool.setuptools]
-packages = ["polar_route"]
+packages = {find = {}}
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
