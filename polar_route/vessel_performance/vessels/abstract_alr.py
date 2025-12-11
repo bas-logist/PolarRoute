@@ -21,7 +21,6 @@ class AbstractALR(AbstractVessel):
         self.max_ice        = self.vessel_params['max_ice_conc']
         self.excluded_zones = self.vessel_params.get('excluded_zones')
 
-
     def model_performance(self, cellbox):
         """
             Method to determine the performance characteristics for the ALR
@@ -81,7 +80,6 @@ class AbstractALR(AbstractVessel):
 
         return land
 
-
     def shallow(self, cellbox):
         """
             Method to determine if the water in a cell is too shallow for an ALR based on configured minimum depth
@@ -100,7 +98,6 @@ class AbstractALR(AbstractVessel):
 
         return shallow
 
-
     def extreme_ice(self, cellbox):
         """
             Method to determine if a cell is inaccessible based on configured max ice concentration
@@ -111,7 +108,7 @@ class AbstractALR(AbstractVessel):
             Returns:
                 ext_ice (bool): boolean that is True if the cell is inaccessible due to ice
         """
-        if 'SIC' not in cellbox.agg_data:
+        if "SIC" not in cellbox.agg_data or cellbox.agg_data["SIC"] is None:
             logging.debug(f"No sea ice concentration data in cell {cellbox.id}")
             ext_ice = False
         else:
@@ -144,5 +141,3 @@ class AbstractALR(AbstractVessel):
                 cellbox (AggregatedCellBox): updated cell with battery consumption values
         """
         raise NotImplementedError
-
-
