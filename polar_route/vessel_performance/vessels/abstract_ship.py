@@ -132,7 +132,7 @@ class AbstractShip(AbstractVessel):
             Returns:
                 ext_ice (bool): boolean that is True if the cell is inaccessible due to ice
         """
-        if 'SIC' not in cellbox.agg_data:
+        if 'SIC' not in cellbox.agg_data or cellbox.agg_data['SIC'] is None:
             logging.debug(f"No sea ice concentration data in cell {cellbox.id}")
             ext_ice = False
         else:
