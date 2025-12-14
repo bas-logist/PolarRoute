@@ -22,7 +22,7 @@ positional arguments:
 
     config : A configuration file detailing how to build the digital environment. JSON parsable
 
-The format of the required *config.json* file can be found in the `"Configuration - Mesh Construction" <https://antarctica.github.io/MeshiPhi/html/sections/Configuration/Mesh_construction_config.html>`_ section of the `MeshiPhi documentation <https://antarctica.github.io/MeshiPhi/>`_ .
+The format of the required *config.json* file can be found in the `"Configuration - Mesh Construction" <https://bas-amop.github.io/MeshiPhi/html/sections/Configuration/Mesh_construction_config.html>`_ section of the `MeshiPhi documentation <https://bas-amop.github.io/MeshiPhi/>`_ .
 There are also example configuration files available in the directory :code:`examples/environment_config/grf_example.config.json`
 
 optional arguments:
@@ -51,7 +51,7 @@ positional arguments:
     mesh : A digital environment file.
 
 The format for the required *vessel.json* file can be found in the :ref:`configuration - vessel performance modeller` section of the documentation.
-The required *mesh.json* file can be created using the *create_mesh* command from the `MeshiPhi <https://github.com/antarctica/MeshiPhi>`_ package.
+The required *mesh.json* file can be created using the *create_mesh* command from the `MeshiPhi <https://github.com/bas-amop/MeshiPhi>`_ package.
 
 optional arguments are
 
@@ -208,9 +208,9 @@ optional arguments:
 ^^^^^^^^
 Plotting
 ^^^^^^^^
-Meshes produced at any stage in the route planning process can be visualised using the :code:`plot_mesh` cli command from the `GeoPlot <https://github.com/antarctica/GeoPlot>`_
+Meshes produced at any stage in the route planning process can be visualised using the :code:`plot_mesh` cli command from the `GeoPlot <https://github.com/bas-amop/GeoPlot>`_
 library. Meshes and routes can also be plotted in other GIS software such as QGIS by exporting the mesh to a commonly used format such
-as .geojson or .tif using the export_mesh command described in the `MeshiPhi <https://github.com/antarctica/MeshiPhi>`_ docs.
+as .geojson or .tif using the export_mesh command described in the `MeshiPhi <https://github.com/bas-amop/MeshiPhi>`_ docs.
 
 ::
 

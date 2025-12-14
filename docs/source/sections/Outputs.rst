@@ -9,7 +9,7 @@ The Vessel_mesh.json file
 #########################
 
 The vessel performance mesh is an extension to an environmental mesh created by the 
-`MeshiPhi <https://github.com/antarctica/MeshiPhi>`_ library.
+`MeshiPhi <https://github.com/bas-amop/MeshiPhi>`_ library.
 Once a discrete mesh environment is created, it is then passed to the vessel performance modeller
 which applies transformations which are specific to a given vehicle. These vehicle specific values 
 are then encoded into the mesh json object and passed downstream to the route planner.
@@ -39,7 +39,7 @@ are then encoded into the mesh json object and passed downstream to the route pl
     * density (available via dataloaders: *density*)
     * u10, v10 (available via dataloaders: *era5_wind*)
 
-    see section **Dataloader Overview** in the `MeshiPhi docs <https://antarctica.github.io/MeshiPhi/>`_ for more information on dataloaders
+    see section **Dataloader Overview** in the `MeshiPhi docs <https://bas-amop.github.io/MeshiPhi/>`_ for more information on dataloaders
 
     The vessel performance modeller will still run without these attributes but will assign default values from the
     configuration file where any data is missing.

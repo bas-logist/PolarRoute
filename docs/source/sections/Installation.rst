@@ -2,7 +2,7 @@
 Installation
 ************
 
-In this section we will outline the necessary steps for installing the PolarRoute software package. Any installation of PolarRoute will also include `MeshiPhi <https://github.com/antarctica/MeshiPhi>`_; a package designed to
+In this section we will outline the necessary steps for installing the PolarRoute software package. Any installation of PolarRoute will also include `MeshiPhi <https://github.com/bas-amop/MeshiPhi>`_; a package designed to
 discretise the world from heterogeneous data sources. PolarRoute requires a pre-existing installation of Python 3.8 or higher.
 
 Installing PolarRoute
@@ -16,7 +16,7 @@ PolarRoute is available from PyPI and can be installed by running:
 For development purposes you can install PolarRoute by downloading the source code from GitHub:
 ::
 
-    git clone https://github.com/Antarctica/PolarRoute
+    git clone https://github.com/bas-amop/PolarRoute
     pip install -e ./PolarRoute
 
 Use of :code:`-e` is optional, depending on whether you want to be able to edit the installed copy of the package.
@@ -29,7 +29,7 @@ In order to run the test suite you will also need to include the `[test]` flag t
 Installing GeoPlot
 #####################
 
-Plotting functionality for the outputs of PolarRoute is provided by the `GeoPlot <https://github.com/antarctica/GeoPlot>`_ package, also developed at BAS.
+Plotting functionality for the outputs of PolarRoute is provided by the `GeoPlot <https://github.com/bas-amop/GeoPlot>`_ package, also developed at BAS.
 
 Geoplot is available from PyPI and can be installed by running:
 ::
