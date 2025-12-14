@@ -33,12 +33,12 @@ class SDA(AbstractShip):
                 cellbox (AggregatedCellBox): updated cell with speed values
         """
 
-        logging.debug(f"Calculating new speed for cellbox {cellbox.id} based on SDA resistance models")
+        logger.debug(f"Calculating new speed for cellbox {cellbox.id} based on SDA resistance models")
         speed = cellbox.agg_data['speed']
         ice_resistance = None
 
         if all(k in cellbox.agg_data for k in ("SIC", "thickness", "density")):
-            logging.debug("Adjusting speed according to ice resistance model")
+            logger.debug("Adjusting speed according to ice resistance model")
             if cellbox.agg_data['SIC'] == 0.0:
                 ice_resistance = 0.
                 speed = self.max_speed
@@ -54,9 +54,9 @@ class SDA(AbstractShip):
                 else:
                     speed = self.max_speed
         else:
-            logging.debug("No resistance data available, no speed adjustment necessary")
+            logger.debug("No resistance data available, no speed adjustment necessary")
 
-        logging.debug("Creating speed array")
+        logger.debug("Creating speed array")
         cellbox.agg_data['speed'] = [speed for x in range(8)]
 
         if ice_resistance is not None:
@@ -74,7 +74,7 @@ class SDA(AbstractShip):
             Returns:
                 cellbox (AggregatedCellBox): updated cell with fuel consumption values
         """
-        logging.debug(f"Calculating fuel requirements in cell {cellbox.id}")
+        logger.debug(f"Calculating fuel requirements in cell {cellbox.id}")
 
         cellbox = self.model_resistance(cellbox)
 
@@ -105,7 +105,7 @@ class SDA(AbstractShip):
             cellbox = calc_wind(cellbox)
             cellbox.agg_data['resistance'] = [cellbox.agg_data['wind resistance'][i] + ice_resistance[i] for i in range(8)]
         else:
-            logging.debug("No wind data present, wind resistance will not be calculated")
+            logger.debug("No wind data present, wind resistance will not be calculated")
             cellbox.agg_data['resistance'] = ice_resistance
 
         return cellbox
@@ -299,7 +299,7 @@ def calc_wind(cellbox):
             cellbox (AggregatedCellBox): updated cell with wind information
     """
 
-    logging.debug(f"Calculating wind resistance in cellbox {cellbox.id}")
+    logger.debug(f"Calculating wind resistance in cellbox {cellbox.id}")
 
     wind_res = [0, 0, 0, 0, 0, 0, 0, 0]
     rel_wind_speed = [0, 0, 0, 0, 0, 0, 0, 0]

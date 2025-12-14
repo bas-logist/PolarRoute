@@ -427,8 +427,7 @@ class RoutePlanner:
                    route.source_waypoint = s_wp
                 else:
                     while s_wp.get_cellbox_indx() != e_wp_indx:
-                        # logging.debug(">>> s_wp_indx >>>", s_wp)
-                        # logging.debug(">>> e_wp_indx >>>", e_wp_indx)
+
                         routing_info = s_wp.get_routing_info(e_wp_indx)
                         # If no route found break out of loop and skip this case
                         if routing_info.get_node_index() == -1:
@@ -632,13 +631,13 @@ class RoutePlanner:
                 continue
             # Move waypoint to the closest accessible cellbox, if it isn't in one already
             if self.config['adjust_waypoints']:
-                logging.debug("Adjusting waypoints in inaccessible cells to nearest accessible location")
+                logger.debug("Adjusting waypoints in inaccessible cells to nearest accessible location")
                 adjusted_point = _adjust_waypoints(point, self.env_mesh.to_json()['cellboxes'])
 
                 waypoints_df.loc[idx, 'Long'] = adjusted_point.x
                 waypoints_df.loc[idx, 'Lat'] = adjusted_point.y
             else:
-                logging.debug("Skipping waypoint adjustment")
+                logger.debug("Skipping waypoint adjustment")
 
         # Split around waypoints if specified in the config
         self._splitting_around_waypoints(waypoints_df)
@@ -692,8 +691,8 @@ class RoutePlanner:
         converged_sep = self.config.get('smoothing_converged_sep', 1e-3)
         objective_function = self.config.get('objective_function', 'traveltime')
 
-        logging.debug(f"Blocking metric: {blocked_metric}")
-        logging.debug(f"Blocking threshold: {blocked_percentage}")
+        logger.debug(f"Blocking metric: {blocked_metric}")
+        logger.debug(f"Blocking threshold: {blocked_percentage}")
 
         logger.info('========= Determining Smoothed Routes ===========')
         geojson = {}
@@ -849,7 +848,7 @@ class RoutePlanner:
                 Returns:
                     selected (int): the id of the selected cellbox
             """
-            logging.debug(">>> selecting cellbox for waypoint on boundary...")
+            logger.debug(">>> selecting cellbox for waypoint on boundary...")
             if (self.env_mesh.neighbour_graph.get_neighbour_case(self.cellboxes_lookup[ids[0]],
                                                                 self.cellboxes_lookup[ids[1]]) in
                     [Direction.east, Direction.north_east, Direction.north]):
@@ -865,7 +864,7 @@ class RoutePlanner:
                     wp_id.append(self.env_mesh.agg_cellboxes[indx].get_id())
                     wp.set_cellbox_indx(str(self.env_mesh.agg_cellboxes[indx].get_id()))
             if not wp_id:
-                logging.warning(f'{wp.get_name()} is not an accessible waypoint')
+                logger.warning(f'{wp.get_name()} is not an accessible waypoint')
                 valid_wps.remove(wp)
         
             if len(wp_id) > 1: # the source wp is on the border of 2 cellboxes

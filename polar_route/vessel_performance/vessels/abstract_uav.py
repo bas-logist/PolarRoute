@@ -32,7 +32,7 @@ class AbstractUAV(AbstractVessel):
             Args:
                     cellbox (AggregatedCellBox): input cell from environmental mesh
         """
-        logging.debug(
+        logger.debug(
             f"Modelling performance in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
         perf_cellbox = self.model_speed(cellbox)
         perf_cellbox = self.model_battery(perf_cellbox)
@@ -50,7 +50,7 @@ class AbstractUAV(AbstractVessel):
             Returns:
                 access_values (dict): boolean values for the modelled accessibility criteria
         """
-        logging.debug(f"Modelling accessibility in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
+        logger.debug(f"Modelling accessibility in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
         access_values = dict()
 
         # Exclude cells due to land or ice
@@ -79,7 +79,7 @@ class AbstractUAV(AbstractVessel):
                 land (bool): boolean that is True if the cell is inaccessible due to land
         """
         if 'elevation' not in cellbox.agg_data:
-            logging.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is land")
+            logger.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is land")
             land = False
         else:
             land = cellbox.agg_data['elevation'] >= 0.0
