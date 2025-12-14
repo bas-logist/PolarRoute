@@ -1,0 +1,7 @@
+{
+        "vessel_type": "Slocum",
+        "max_speed": 1.25,
+        "unit": "km/hr",
+        "max_ice_conc": 10,
+        "min_depth": 10
+}

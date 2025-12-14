@@ -1,0 +1,7 @@
+{
+        "vessel_type": "BoatyMcBoatFace",
+        "max_speed": 3.6,
+        "unit": "km/hr",
+        "max_ice_conc": 10,
+        "min_depth": 10
+}
