@@ -3,6 +3,9 @@ import logging
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+
+# Module logger
+logger = logging.getLogger(__name__)
 from shapely import wkt, distance
 from shapely.geometry import Point, LineString, MultiLineString, Polygon
 from polar_route.utils import gpx_route_import
@@ -117,7 +120,7 @@ def load_route(route_file):
             route_type(str):Type of route, either 'smoothed' or 'dijkstra' 
 
     """
-    logging.info(f"Loading route from: {route_file}")
+    logger.info(f"Loading route from: {route_file}")
     # Loading route from csv file
     if route_file[-3:] == "csv":
         df = pd.read_csv(route_file)
@@ -164,12 +167,12 @@ def load_route(route_file):
         df['Lat'] = lats
         route_type = "smoothed"
     else:
-        logging.warning("Invalid route input! Please supply either a csv, gpx or geojson file with the route waypoints.")
+        logger.warning("Invalid route input! Please supply either a csv, gpx or geojson file with the route waypoints.")
         return None
 
-    logging.info(f"Route start waypoint: {from_wp}")
-    logging.info(f"Route end waypoint: {to_wp}")
-    logging.debug(f"Route has {len(df)} waypoints")
+    logger.info(f"Route start waypoint: {from_wp}")
+    logger.info(f"Route end waypoint: {to_wp}")
+    logger.debug(f"Route has {len(df)} waypoints")
     df['id'] = 1
     df['order'] = np.arange(len(df))
     return df, from_wp, to_wp, route_type
@@ -184,14 +187,14 @@ def load_mesh(mesh_file):
         Returns:
             mesh (GeoDataFrame): Mesh in GeoDataFrame format
     """
-    logging.info(f"Loading mesh from: {mesh_file}")
+    logger.info(f"Loading mesh from: {mesh_file}")
     # Loading mesh information
     with open(mesh_file, 'r') as fp:
         info = json.load(fp)
     mesh = pd.DataFrame(info['cellboxes'])
 
     if (not any('uC' in cb for cb in mesh)) or (not any('vC' in cb for cb in mesh)):
-        logging.info("No data for currents in mesh, setting default value to zero!")
+        logger.info("No data for currents in mesh, setting default value to zero!")
 
     mesh['geometry'] = mesh['geometry'].apply(wkt.loads)
     mesh = gpd.GeoDataFrame(mesh, crs='EPSG:4326', geometry='geometry')
@@ -328,7 +331,7 @@ def route_calc(df, from_wp, to_wp, mesh, route_type):
         if region_poly.contains(Point((df.iloc[idx]['Long'],df.iloc[idx]['Lat']))):
             continue
         else:
-            logging.warning(f"Mesh does not contain waypoint located at Lat: {df.iloc[idx]['Lat']} "
+            logger.warning(f"Mesh does not contain waypoint located at Lat: {df.iloc[idx]['Lat']} "
                             f"Long: {df.iloc[idx]['Long']} !")
             return None
 
@@ -337,7 +340,7 @@ def route_calc(df, from_wp, to_wp, mesh, route_type):
 
     # Loop through crossing points to order them into a track along the route
     user_track = order_track(df, track_points)
-    logging.debug(f"Route has {len(user_track)} crossing points")
+    logger.debug(f"Route has {len(user_track)} crossing points")
 
     # Initialise segment costs with zero values at start point of path
     traveltimes = [0.0]
@@ -348,9 +351,9 @@ def route_calc(df, from_wp, to_wp, mesh, route_type):
     # Calculate cost of each segment in the path
     # Putting logging here so it only triggers once per route 
     if dijkstra_route:
-        logging.info('Calculating traveltime and distance using dijkstra metric')
+        logger.info('Calculating traveltime and distance using dijkstra metric')
     else:
-        logging.info('Calculating traveltime and distance using smoothed metric')
+        logger.info('Calculating traveltime and distance using smoothed metric')
             
     for idx in range(len(user_track)-1):
         start_point = np.array((user_track['Point'].iloc[idx].xy[0][0], user_track['Point'].iloc[idx].xy[1][0]))
@@ -359,9 +362,9 @@ def route_calc(df, from_wp, to_wp, mesh, route_type):
         case = case_from_angle(start_point, end_point)
         # Check for inaccessible cells on user defined route
         if cell_box['inaccessible']:
-            logging.warning(f"This route crosses an inaccessible cell! Cell located at Lat: {cell_box['cy']} "
+            logger.warning(f"This route crosses an inaccessible cell! Cell located at Lat: {cell_box['cy']} "
                          f"Long: {cell_box['cx']}")
-            logging.info("Trying with speed and fuel from previous cells, reroute for more accurate results")
+            logger.info("Trying with speed and fuel from previous cells, reroute for more accurate results")
             i = 0
             # Go back along path to find previous accessible cell
             while cell_box['inaccessible']:
@@ -377,7 +380,7 @@ def route_calc(df, from_wp, to_wp, mesh, route_type):
         cases.append(case)
 
 
-    logging.debug(f"Route crosses {len(set([c['id'] for c in cellboxes]))} different cellboxes")
+    logger.debug(f"Route crosses {len(set([c['id'] for c in cellboxes]))} different cellboxes")
     # Find cumulative values along path
     path_points = user_track['Point']
     path_traveltimes = np.cumsum(traveltimes)

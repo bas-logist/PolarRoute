@@ -3,6 +3,9 @@ from polar_route.vessel_performance.vessels.abstract_ship import AbstractShip
 import numpy as np
 import logging
 
+# Module logger
+logger = logging.getLogger(__name__)
+
 class SDA(AbstractShip):
     """
         Vessel class with methods specifically designed to model the performance of the British Antarctic Survey

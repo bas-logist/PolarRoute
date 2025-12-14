@@ -10,6 +10,9 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 
+# Module logger
+logger = logging.getLogger(__name__)
+
 from datetime import datetime, timedelta
 from functools import wraps
 from calendar import monthrange
@@ -224,9 +227,9 @@ def memory_trace(func):
         top_stats = snapshot.statistics('traceback')
 
         stat = top_stats[0]
-        logging.info("{} memory blocks: {.1f} KiB".
+        logger.info("{} memory blocks: {.1f} KiB".
                      format(stat.count, stat.size / 1024))
-        logging.info("\n".join(stat.traceback.format()))
+        logger.info("\n".join(stat.traceback.format()))
         return res
     return wrapper
 
@@ -237,7 +240,7 @@ def timed_call(func):
         start = time.perf_counter()
         res = func(*args, **kwargs)
         end = time.perf_counter()
-        logging.info("Timed call to {} took {:02f} seconds".
+        logger.info("Timed call to {} took {:02f} seconds".
                      format(func.__name__, end - start))
         return res
     return wrapper
@@ -506,7 +509,7 @@ def extract_geojson_routes(mesh):
             empty list
     """
     
-    logging.info("Extracting routes in geojson format")
+    logger.info("Extracting routes in geojson format")
     
     # Extract the computed routes from the mesh
     if "paths" in mesh.keys():

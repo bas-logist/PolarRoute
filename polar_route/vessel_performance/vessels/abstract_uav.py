@@ -3,6 +3,9 @@ from meshiphi.mesh_generation.aggregated_cellbox import AggregatedCellBox
 from abc import abstractmethod
 import logging
 
+# Module logger
+logger = logging.getLogger(__name__)
+
 
 class AbstractUAV(AbstractVessel):
     """
@@ -14,7 +17,7 @@ class AbstractUAV(AbstractVessel):
                 params (dict): vessel parameters from the vessel config file
         """
         self.vessel_params = params
-        logging.info(f"Initialising a vessel object of type: {self.__class__.__name__}")
+        logger.info(f"Initialising a vessel object of type: {self.__class__.__name__}")
         self.max_speed      = self.vessel_params['max_speed']
         self.speed_unit     = self.vessel_params['unit']
         self.max_elevation  = self.vessel_params['max_elevation']

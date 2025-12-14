@@ -3,6 +3,9 @@ from polar_route.vessel_performance.vessels.abstract_ship import AbstractShip
 import numpy as np
 import logging
 
+# Module logger
+logger = logging.getLogger(__name__)
+
 class SDAWind(AbstractShip):
     """
         Vessel class with methods specifically designed to model the performance of the British Antarctic Survey
@@ -62,7 +65,7 @@ class SDAWind(AbstractShip):
         cellbox = self.model_resistance(cellbox)
 
         if 'wind resistance' in cellbox.agg_data:
-            logging.info("Adjusting speed for wind data")
+            logger.info("Adjusting speed for wind data")
             for i in range(8):
                 if cellbox.agg_data['wind resistance'][i] > 0:
                     if cellbox.agg_data['wind resistance'][i] < self.force_limit*0.75:

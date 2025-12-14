@@ -12,6 +12,9 @@ import itertools
 import copy
 import math
 
+# Module logger
+logger = logging.getLogger(__name__)
+
 from polar_route.route_planner.route import Route
 from polar_route.route_planner.source_waypoint import SourceWaypoint
 from polar_route.route_planner.waypoint import Waypoint
@@ -70,10 +73,10 @@ def _adjust_waypoints(point, cellboxes, max_distance=5):
     cb_polygon = wkt.loads(nearest_cb['geometry'])
     
     if point.within(cb_polygon):
-        logging.debug(f'({point.y},{point.x}) in accessible cellbox')
+        logger.debug(f'({point.y},{point.x}) in accessible cellbox')
         return point
     else:
-        logging.debug(f'({point.y},{point.x}) not in accessible cellbox')
+        logger.debug(f'({point.y},{point.x}) not in accessible cellbox')
         # Create a line between CB centre and point
         cb_centre = Point([nearest_cb['cx'], nearest_cb['cy']])
         connecting_line = LineString([point, cb_centre])
@@ -83,7 +86,7 @@ def _adjust_waypoints(point, cellboxes, max_distance=5):
         # Put limit on how far it's allowed to adjust waypoint
         distance_away = connecting_line.length - intersecting_line.length
         if distance_away > max_distance:
-            logging.info(f'Waypoint too far from accessible cellbox!')
+            logger.info(f'Waypoint too far from accessible cellbox!')
             return point
         
         # Find where it meets the cellbox boundary
@@ -94,8 +97,8 @@ def _adjust_waypoints(point, cellboxes, max_distance=5):
         adjusted_point = buffered_point.exterior.intersection(intersecting_line)
         # Interior point is now a point inside the cellbox 
         # that is not on the boundary
-        logging.info(f'({point.y},{point.x}) not accessible cellbox')
-        logging.info(f'Adjusted to ({adjusted_point.y},{adjusted_point.x})')
+        logger.info(f'({point.y},{point.x}) not accessible cellbox')
+        logger.info(f'Adjusted to ({adjusted_point.y},{adjusted_point.x})')
         return adjusted_point
 
 
@@ -280,7 +283,7 @@ class RoutePlanner:
                                   f'route planner!')
         # Check for SIC data, used in smoothed route construction
         if not any('SIC' in cb.agg_data for cb in self.cellboxes_lookup.values()):
-            logging.debug('The environment mesh does not have SIC data')
+            logger.debug('The environment mesh does not have SIC data')
         
         # Check if speed is defined in the environment mesh
         if not any('speed' in cb.agg_data for cb in self.cellboxes_lookup.values()):
@@ -316,7 +319,7 @@ class RoutePlanner:
 
         """
         if ('waypoint_splitting' in self.config) and (self.config['waypoint_splitting']):
-            logging.info(' Splitting around waypoints !')
+            logger.info(' Splitting around waypoints !')
             prior_cells = [cellbox.get_id() for cellbox in self.env_mesh.agg_cellboxes if not cellbox.agg_data['inaccessible']]
             wps_points = [(entry['Lat'], entry['Long']) for _, entry in waypoints_df.iterrows()]
             self.env_mesh.split_points(wps_points)
@@ -340,7 +343,7 @@ class RoutePlanner:
         # Zeroing currents if both vectors are defined and zeroed
         if ('zero_currents' in self.config) and ("vector_names" in self.config):
             if self.config['zero_currents']:
-                logging.info('Zero currents set in config for this mesh!')
+                logger.info('Zero currents set in config for this mesh!')
                 for idx, cell in enumerate(mesh['cellboxes']):
                     cell[self.config['vector_names'][0]] = 0.0
                     cell[self.config['vector_names'][1]] = 0.0
@@ -349,7 +352,7 @@ class RoutePlanner:
         # If no vectors are defined then add zero currents to mesh
         if 'vector_names' not in self.config:
             self.config['vector_names'] = ['Vector_x', 'Vector_y']
-            logging.info('No vector_names defined in config. Zeroing currents in mesh !')
+            logger.info('No vector_names defined in config. Zeroing currents in mesh !')
             for idx, cell in enumerate(mesh['cellboxes']):
                 cell[self.config['vector_names'][0]] = 0.0
                 cell[self.config['vector_names'][1]] = 0.0
@@ -370,7 +373,7 @@ class RoutePlanner:
         # Setting speed to a fixed value if specified in the config
         if 'fixed_speed' in self.config:
             if self.config['fixed_speed']:
-                logging.info('Setting all speeds to max speed for this mesh!')
+                logger.info('Setting all speeds to max speed for this mesh!')
                 max_speed = mesh['config']['vessel_info']['max_speed']
                 for idx, cell in enumerate(mesh['cellboxes']):
                     if 'speed' in cell.keys():
@@ -410,7 +413,7 @@ class RoutePlanner:
                 if s_wp.equals(e_wp):
                     # No need to log this for the "route" from a waypoint to itself
                     if s_wp.get_name() != e_wp.get_name():
-                        logging.info(f"Route from {s_wp.get_name()} to {e_wp.get_name()} not calculated, these waypoints"
+                        logger.info(f"Route from {s_wp.get_name()} to {e_wp.get_name()} not calculated, these waypoints"
                                      f" are identical")
                     continue
                 route_segments = []
@@ -429,7 +432,7 @@ class RoutePlanner:
                         routing_info = s_wp.get_routing_info(e_wp_indx)
                         # If no route found break out of loop and skip this case
                         if routing_info.get_node_index() == -1:
-                            logging.warning(f'{s_wp.get_name()} to {e_wp.get_name()} - Failed to construct Dijkstra route')
+                            logger.warning(f'{s_wp.get_name()} to {e_wp.get_name()} - Failed to construct Dijkstra route')
                             no_route_found = True
                             break
                         # Insert segments at the front of the list as we are moving from e_wp to s_wp
@@ -446,19 +449,19 @@ class RoutePlanner:
                         for x in range(2):
                             cases.insert(0, neighbour_case)
                         e_wp_indx = routing_info.get_node_index()
-                        logging.debug(f"route segments >> {route_segments[0][0].to_str()}")
+                        logger.debug(f"route segments >> {route_segments[0][0].to_str()}")
                    
                     route_segments = list(itertools.chain.from_iterable(route_segments))
                     route = Route(route_segments, s_wp.get_name(), e_wp.get_name(), self.config)
                     route.source_waypoint = s_wp
                     route.set_cases(cases)
                     for s in route_segments:
-                        logging.debug(f">>>|S|>>>> {s.to_str()}")
+                        logger.debug(f">>>|S|>>>> {s.to_str()}")
 
                 if no_route_found:
                     continue
 
-                logging.debug(route.segments[0].get_start_wp().get_cellbox_indx())
+                logger.debug(route.segments[0].get_start_wp().get_cellbox_indx())
                 # Correct the first and last segment of the route
                 route.waypoint_correction(self.cellboxes_lookup[route.segments[0].get_start_wp().get_cellbox_indx()],
                                           s_wp, route.segments[0].get_end_wp(), 0)
@@ -468,7 +471,7 @@ class RoutePlanner:
                     route.waypoint_correction(self.cellboxes_lookup[route.segments[-1].get_end_wp().get_cellbox_indx()],
                                               e_wp, route.segments[-1].get_start_wp(), -1)
                 routes.append(route)
-                logging.debug(route.to_json(route_type='dijkstra'))
+                logger.debug(route.to_json(route_type='dijkstra'))
                 
         return routes
 
@@ -524,7 +527,7 @@ class RoutePlanner:
             while not run_all:
                 # Determine the index of the cell with the minimum objective function cost that has not yet been visited
                 min_obj_indx = find_min_objective(wp)
-                logging.debug(f"min_obj >>> {min_obj_indx}")
+                logger.debug(f"min_obj >>> {min_obj_indx}")
                 # If min_obj_indx is -1 then no route possible, and we stop search for this waypoint
                 if min_obj_indx == -1:
                     break
@@ -534,7 +537,7 @@ class RoutePlanner:
             while not (wp.is_all_visited() and wp.is_all_cells_visited(self._required_nodes)):
                 # Determine the index of the cell with the minimum objective function cost that has not yet been visited
                 min_obj_indx = find_min_objective(wp)
-                logging.debug(f"min_obj >>> {min_obj_indx}")
+                logger.debug(f"min_obj >>> {min_obj_indx}")
                 # If min_obj_indx is -1 then no route possible, and we stop search for this waypoint
                 if min_obj_indx == -1:
                     break
@@ -566,7 +569,7 @@ class RoutePlanner:
             not math.isnan(traveltime[1]):
             self.neighbour_legs[node_id+"to"+neighbour_id] = (traveltime, crossing_points)
         else:
-            logging.debug(f"Travel time is NaN for {node_id} to {neighbour_id}")
+            logger.debug(f"Travel time is NaN for {node_id} to {neighbour_id}")
 
         # Create segments and set their travel time based on the returned 3 points and the remaining obj accordingly (travel_time * node speed/fuel)
         s1 = Segment(Waypoint.load_from_cellbox(self.cellboxes_lookup[node_id]), Waypoint(crossing_points[1],
@@ -623,7 +626,7 @@ class RoutePlanner:
             point = Point([row['Long'], row['Lat']])
             # Only allow waypoints that lie within the bounds of the env_mesh
             if not point.within(mesh_boundary):
-                logging.info(f"Waypoint {row['Name']} at Lat: {row['Lat']}, Long {row['Long']} is outside the mesh and "
+                logger.info(f"Waypoint {row['Name']} at Lat: {row['Lat']}, Long {row['Long']} is outside the mesh and "
                              f"will be disregarded!")
                 waypoints_df.drop(idx)
                 continue
@@ -654,15 +657,15 @@ class RoutePlanner:
         if not end_wps:
             raise NoRouteFoundError('Invalid waypoints. No accessible destination waypoints specified')
 
-        logging.info('============= Dijkstra Route Creation ============')
-        logging.info(f" - Objective = {self.config['objective_function']}")
+        logger.info('============= Dijkstra Route Creation ============')
+        logger.info(f" - Objective = {self.config['objective_function']}")
         for wp in src_wps:
-            logging.info('--- Processing Source Waypoint = {}'.format(wp.get_name()))
+            logger.info('--- Processing Source Waypoint = {}'.format(wp.get_name()))
             self._dijkstra(wp, end_wps)
 
         # Using Dijkstra graph compute route and meta information to all end_waypoints
         routes = self._dijkstra_routes(src_wps, end_wps)
-        logging.info("Dijkstra routing complete...")
+        logger.info("Dijkstra routing complete...")
         self.routes_dijkstra = routes
         # Returning the constructed routes
         return routes
@@ -692,7 +695,7 @@ class RoutePlanner:
         logging.debug(f"Blocking metric: {blocked_metric}")
         logging.debug(f"Blocking threshold: {blocked_percentage}")
 
-        logging.info('========= Determining Smoothed Routes ===========')
+        logger.info('========= Determining Smoothed Routes ===========')
         geojson = {}
         smoothed_routes = []
 
@@ -705,7 +708,7 @@ class RoutePlanner:
 
             # Handle straight line route within same cell
             if len(route_json['properties']['CellIndices']) == 1:
-                logging.info(f"--- Skipping smoothing for {route_json['properties']['name']}, direct route within a"
+                logger.info(f"--- Skipping smoothing for {route_json['properties']['name']}, direct route within a"
                              f" single cell")
                 # Set and remove some additional info for final output to match smoothed routes
                 start_location = route_json['geometry']['coordinates'][0]
@@ -726,7 +729,7 @@ class RoutePlanner:
                 smoothed_routes += [route_json]
                 continue
 
-            logging.info(f"--- Smoothing {route_json['properties']['name']}")
+            logger.info(f"--- Smoothing {route_json['properties']['name']}")
 
             initialised_dijkstra_graph = self.initialise_dijkstra_graph(cellboxes, neighbour_graph, route)
             adjacent_pairs, source_wp, end_wp = initialise_dijkstra_route(initialised_dijkstra_graph, route_json)
@@ -775,7 +778,7 @@ class RoutePlanner:
 
             smoothed_routes += [smoothed_route]
 
-            logging.info('Smoothing complete in {} iterations'.format(sf.jj))
+            logger.info('Smoothing complete in {} iterations'.format(sf.jj))
 
         geojson['type'] = "FeatureCollection"
         geojson['features'] = smoothed_routes

@@ -2,6 +2,9 @@ import logging
 import json
 import numpy as np
 import geopandas as gpd
+
+# Module logger
+logger = logging.getLogger(__name__)
 from polar_route.route_planner.crossing import traveltime_in_cell
 from polar_route.utils import unit_time, unit_speed, case_from_angle
 from meshiphi.utils import longitude_domain
@@ -133,7 +136,7 @@ class Route:
         """
            Saves the constructed route to the given file location in the given format
         """
-        logging.info(f"Saving route to {file_path}")
+        logger.info(f"Saving route to {file_path}")
         file_path_strs = file_path.split('.')
 
         if file_path_strs[-1] in ["json", "geojson"]:
@@ -157,8 +160,8 @@ class Route:
                 indx (int): the index of the segment along the route
         """
         direction = [1, 2, 3, 4, -1, -2, -3, -4]
-        logging.debug(f"WP_correction >> wp >> {wp.to_point()}")
-        logging.debug(f"WP_correction >> cp >> {cp.to_point()}")
+        logger.debug(f"WP_correction >> wp >> {wp.to_point()}")
+        logger.debug(f"WP_correction >> cp >> {cp.to_point()}")
         m_long = 111.321*1000
         m_lat = 111.386*1000
         x = (cp.get_longitude() - wp.get_longitude()) * m_long * np.cos(wp.get_latitude() * (np.pi / 180))
@@ -172,9 +175,9 @@ class Route:
         sv = cellbox.agg_data['vC']
         ssp = unit_speed(cellbox.agg_data['speed'][direction.index(case)], self.conf['unit_shipspeed'])
         traveltime, distance = traveltime_in_cell(x, y, su, sv, ssp, tt_dist=True)
-        logging.debug(f"WP_correction >> tt >> {traveltime}")
-        logging.debug(f"WP_correction >> distance >> {distance}")
-        logging.debug(f"WP_correction >> case >> {case}")
+        logger.debug(f"WP_correction >> tt >> {traveltime}")
+        logger.debug(f"WP_correction >> distance >> {distance}")
+        logger.debug(f"WP_correction >> case >> {case}")
         traveltime = unit_time(traveltime, self.conf['time_unit'])
 
         # update segment and its metrics
@@ -183,10 +186,10 @@ class Route:
         self.segments[indx].set_distance(distance)
         if 'fuel' in self.conf['path_variables']:
             self.segments[indx].set_fuel(cellbox.agg_data['fuel'][direction.index(case)] * traveltime)
-            logging.debug(f"WP_correction >> fuel >> {cellbox.agg_data['fuel'][direction.index(case)] * traveltime}")
+            logger.debug(f"WP_correction >> fuel >> {cellbox.agg_data['fuel'][direction.index(case)] * traveltime}")
         if 'battery' in self.conf['path_variables']:
             self.segments[indx].set_battery(cellbox.agg_data['battery'][direction.index(case)] * traveltime)
-            logging.debug(f"WP_correction >> battery >> {cellbox.agg_data['battery'][direction.index(case)] * traveltime}")
+            logger.debug(f"WP_correction >> battery >> {cellbox.agg_data['battery'][direction.index(case)] * traveltime}")
 
     def get_points(self):
         """
