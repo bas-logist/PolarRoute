@@ -7,42 +7,17 @@ import json
 import pytest
 import time
 
-from polar_route import __version__ as pr_version
 from polar_route import VesselPerformanceModeller
-
-# Import tests, which are automatically run
-from .vessel_test_functions import test_mesh_cellbox_attributes
-from .vessel_test_functions import test_mesh_cellbox_count
-from .vessel_test_functions import test_mesh_cellbox_ids
-from .vessel_test_functions import test_mesh_cellbox_values
-from .vessel_test_functions import test_mesh_neighbour_graph_count
-from .vessel_test_functions import test_mesh_neighbour_graph_ids
-from .vessel_test_functions import test_mesh_neighbour_graph_values
 
 import logging
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
-# File locations of all vessel performance meshes to be recalculated for regression testing.
-INPUT_MESHES = [
-    './example_meshes/env_meshes/grf_normal.json',
-    './example_meshes/env_meshes/grf_downsample.json',
-    './example_meshes/env_meshes/grf_reprojection.json',
-    './example_meshes/env_meshes/grf_sparse.json',
-    './example_meshes/env_meshes/slocum_test_mesh.json',
-    './example_meshes/env_meshes/alr_test_mesh.json',
-    './example_meshes/env_meshes/twin_otter_test_mesh.json'
-]
+# Import test file discovery
+from .test_utils import get_mesh_test_files
 
-OUTPUT_MESHES = [
-    './example_meshes/vessel_meshes/grf_normal.json',
-    './example_meshes/vessel_meshes/grf_downsample.json',
-    './example_meshes/vessel_meshes/grf_reprojection.json',
-    './example_meshes/vessel_meshes/grf_sparse.json',
-    './example_meshes/vessel_meshes/slocum_test_vessel.json',
-    './example_meshes/vessel_meshes/alr_test_vessel.json',
-    './example_meshes/vessel_meshes/twin_otter_test_vessel.json'
-]
+# Dynamically discover test files
+INPUT_MESHES, OUTPUT_MESHES = get_mesh_test_files()
 
 @pytest.fixture(scope='session', autouse=False, params=zip(INPUT_MESHES, OUTPUT_MESHES))
 def mesh_pair(request):

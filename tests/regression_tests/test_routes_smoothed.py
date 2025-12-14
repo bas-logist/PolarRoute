@@ -2,52 +2,18 @@ import json
 import pytest
 import time
 
-
-from polar_route import __version__ as pr_version
 from polar_route.route_planner.route_planner import RoutePlanner
 from .route_test_functions import extract_waypoints
 from .route_test_functions import extract_route_info
 
-# Import tests, which are automatically run
-from .route_test_functions import test_route_coordinates
-from .route_test_functions import test_waypoint_names
-from .route_test_functions import test_time
-from .route_test_functions import test_fuel_battery
-from .route_test_functions import test_distance
-from .route_test_functions import test_speed
+from .test_utils import get_route_test_files
 
 import logging
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
-TEST_ROUTES = [
-    './example_routes/smoothed/fuel/gaussian_random_field.json',
-    './example_routes/smoothed/fuel/checkerboard.json',
-    './example_routes/smoothed/fuel/great_circle_forward.json',
-    './example_routes/smoothed/fuel/great_circle_reverse.json',
-    './example_routes/smoothed/time/gaussian_random_field.json',
-    './example_routes/smoothed/time/checkerboard.json',
-    './example_routes/smoothed/time/great_circle_forward.json',
-    './example_routes/smoothed/time/great_circle_reverse.json',
-    './example_routes/smoothed/time/multi_waypoint_blocked.json',
-    './example_routes/smoothed/time/single_cell.json',
-    './example_routes/smoothed/crossing_point/horizontal/horizontal_0lat_smooth.json',
-    './example_routes/smoothed/crossing_point/horizontal/horizontal_80latn_smooth.json',
-    './example_routes/smoothed/crossing_point/horizontal/horizontal_80lats_smooth.json',
-    './example_routes/smoothed/crossing_point/horizontal/horizontal_0lat_boundary_smooth.json',
-    './example_routes/smoothed/crossing_point/horizontal/horizontal_0lat_corner_smooth.json',
-    './example_routes/smoothed/crossing_point/vertical/vertical_0lat_smooth.json',
-    './example_routes/smoothed/crossing_point/vertical/vertical_80latn_smooth.json',
-    './example_routes/smoothed/crossing_point/vertical/vertical_80lats_smooth.json',
-    './example_routes/smoothed/crossing_point/vertical/vertical_0lat_boundary_smooth.json',
-    './example_routes/smoothed/crossing_point/vertical/vertical_0lat_corner_smooth.json',
-    './example_routes/smoothed/fuel/twin_otter_f_route.json',
-    './example_routes/smoothed/battery/slocum_b_route.json',
-    './example_routes/smoothed/battery/alr_b_route.json',
-    './example_routes/smoothed/time/slocum_tt_route.json',
-    './example_routes/smoothed/time/alr_tt_route.json',
-    './example_routes/smoothed/time/twin_otter_tt_route.json'
-]
+# Dynamically discover test files
+TEST_ROUTES = get_route_test_files('smoothed')
 
 # Pairing old and new outputs
 @pytest.fixture(scope='session', autouse=False, params=TEST_ROUTES)
