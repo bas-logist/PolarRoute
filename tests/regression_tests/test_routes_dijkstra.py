@@ -71,3 +71,37 @@ def calculate_dijkstra_route(config, mesh):
     LOGGER.info(f'Route calculated in {end - start} seconds')
 
     return new_route
+
+# Test functions that use the route_pair fixture
+from .route_test_functions import (
+    test_route_coordinates as _test_route_coordinates,
+    test_waypoint_names as _test_waypoint_names,
+    test_time as _test_time,
+    test_fuel_battery as _test_fuel_battery,
+    test_cell_indices as _test_cell_indices,
+    test_cases as _test_cases
+)
+
+def test_route_coordinates(route_pair):
+    """Test route coordinates match between old and new"""
+    _test_route_coordinates(route_pair)
+
+def test_waypoint_names(route_pair):
+    """Test waypoint names match between old and new"""
+    _test_waypoint_names(route_pair)
+
+def test_time(route_pair):
+    """Test travel times match between old and new"""
+    _test_time(route_pair)
+
+def test_fuel_battery(route_pair):
+    """Test fuel/battery consumption matches between old and new"""
+    _test_fuel_battery(route_pair)
+
+def test_cell_indices(route_pair):
+    """Test cell indices match between old and new"""
+    _test_cell_indices(route_pair)
+
+def test_cases(route_pair):
+    """Test case information matches between old and new"""
+    _test_cases(route_pair)

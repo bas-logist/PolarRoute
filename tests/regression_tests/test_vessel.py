@@ -19,7 +19,18 @@ from .test_utils import get_mesh_test_files
 # Dynamically discover test files
 INPUT_MESHES, OUTPUT_MESHES = get_mesh_test_files()
 
-@pytest.fixture(scope='session', autouse=False, params=zip(INPUT_MESHES, OUTPUT_MESHES))
+# Create descriptive IDs from mesh file names
+def make_mesh_id(mesh_pair):
+    """Create descriptive test ID from mesh file paths"""
+    from pathlib import Path
+    input_mesh, output_mesh = mesh_pair
+    output_name = Path(output_mesh).stem
+    return output_name
+
+MESH_PAIRS = list(zip(INPUT_MESHES, OUTPUT_MESHES))
+MESH_IDS = [make_mesh_id(pair) for pair in MESH_PAIRS]
+
+@pytest.fixture(scope='session', autouse=False, params=MESH_PAIRS, ids=MESH_IDS)
 def mesh_pair(request):
     """
     Creates a pair of JSON objects, one newly generated, one as old reference
@@ -59,13 +70,52 @@ def calculate_vessel_mesh(mesh_json, vessel_config):
     """
     start = time.perf_counter()
 
-    new_mesh = VesselPerformanceModeller(mesh_json, vessel_config)
-    new_mesh.model_accessibility()
-    new_mesh.model_performance()
+    vessel_modeller = VesselPerformanceModeller(mesh_json, vessel_config)
+    vessel_modeller.model_accessibility()
+    vessel_modeller.model_performance()
 
     end = time.perf_counter()
 
-    cellbox_count = len(new_mesh.env_mesh.agg_cellboxes)
+    cellbox_count = len(vessel_modeller.env_mesh.agg_cellboxes)
     LOGGER.info(f'Vessel simulated against {cellbox_count} cellboxes in {end - start} seconds')
 
-    return new_mesh.to_json()
+    return vessel_modeller.to_json()
+
+# Test functions that use the mesh_pair fixture
+from .vessel_test_functions import (
+    test_mesh_cellbox_count,
+    test_mesh_cellbox_ids,
+    test_mesh_cellbox_values,
+    test_mesh_cellbox_attributes,
+    test_mesh_neighbour_graph_count,
+    test_mesh_neighbour_graph_ids,
+    test_mesh_neighbour_graph_values
+)
+
+def test_vessel_mesh_cellbox_count(mesh_pair):
+    """Test mesh cellbox count matches between old and new"""
+    test_mesh_cellbox_count(mesh_pair)
+
+def test_vessel_mesh_cellbox_ids(mesh_pair):
+    """Test mesh cellbox IDs match between old and new"""
+    test_mesh_cellbox_ids(mesh_pair)
+
+def test_vessel_mesh_cellbox_values(mesh_pair):
+    """Test mesh cellbox values match between old and new"""
+    test_mesh_cellbox_values(mesh_pair)
+
+def test_vessel_mesh_cellbox_attributes(mesh_pair):
+    """Test mesh cellbox attributes match between old and new"""
+    test_mesh_cellbox_attributes(mesh_pair)
+
+def test_vessel_mesh_neighbour_graph_count(mesh_pair):
+    """Test mesh neighbour graph count matches between old and new"""
+    test_mesh_neighbour_graph_count(mesh_pair)
+
+def test_vessel_mesh_neighbour_graph_ids(mesh_pair):
+    """Test mesh neighbour graph IDs match between old and new"""
+    test_mesh_neighbour_graph_ids(mesh_pair)
+
+def test_vessel_mesh_neighbour_graph_values(mesh_pair):
+    """Test mesh neighbour graph values match between old and new"""
+    test_mesh_neighbour_graph_values(mesh_pair)
