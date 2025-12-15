@@ -6,6 +6,7 @@
 import json
 import pytest
 import time
+from pathlib import Path
 
 from polar_route import VesselPerformanceModeller
 
@@ -22,7 +23,6 @@ INPUT_MESHES, OUTPUT_MESHES = get_mesh_test_files()
 # Create descriptive IDs from mesh file names
 def make_mesh_id(mesh_pair):
     """Create descriptive test ID from mesh file paths"""
-    from pathlib import Path
     input_mesh, output_mesh = mesh_pair
     output_name = Path(output_mesh).stem
     return output_name
