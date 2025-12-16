@@ -3,6 +3,9 @@ from meshiphi.mesh_generation.aggregated_cellbox import AggregatedCellBox
 from abc import abstractmethod
 import logging
 
+# Module logger
+logger = logging.getLogger(__name__)
+
 
 class AbstractALR(AbstractVessel):
     """
@@ -14,7 +17,7 @@ class AbstractALR(AbstractVessel):
                 params (dict): vessel parameters from the vessel config file
         """
         self.vessel_params = params
-        logging.info(f"Initialising a vessel object of type: {self.__class__.__name__}")
+        logger.info(f"Initialising a vessel object of type: {self.__class__.__name__}")
         self.max_speed      = self.vessel_params['max_speed']
         self.speed_unit     = self.vessel_params['unit']
         self.max_elevation  = -1 * self.vessel_params['min_depth']
@@ -28,7 +31,7 @@ class AbstractALR(AbstractVessel):
             Args:
                     cellbox (AggregatedCellBox): input cell from environmental mesh
         """
-        logging.debug(
+        logger.debug(
             f"Modelling performance in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
         perf_cellbox = self.model_speed(cellbox)
         perf_cellbox = self.model_battery(perf_cellbox)
@@ -46,7 +49,7 @@ class AbstractALR(AbstractVessel):
             Returns:
                 access_values (dict): boolean values for the modelled accessibility criteria
         """
-        logging.debug(f"Modelling accessibility in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
+        logger.debug(f"Modelling accessibility in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
         access_values = dict()
 
         # Exclude cells due to land or ice
@@ -73,7 +76,7 @@ class AbstractALR(AbstractVessel):
                 land (bool): boolean that is True if the cell is inaccessible due to land
         """
         if 'elevation' not in cellbox.agg_data:
-            logging.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is land")
+            logger.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is land")
             land = False
         else:
             land = cellbox.agg_data['elevation'] >= 0.0
@@ -90,7 +93,7 @@ class AbstractALR(AbstractVessel):
                 shallow (bool): boolean that is True if the cell is too shallow for an ALR
         """
         if 'elevation' not in cellbox.agg_data:
-            logging.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is too shallow")
+            logger.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is too shallow")
             shallow = False
         else:
             condition_shallow1 = 0.0 > cellbox.agg_data['elevation'] > self.max_elevation
@@ -109,7 +112,7 @@ class AbstractALR(AbstractVessel):
                 ext_ice (bool): boolean that is True if the cell is inaccessible due to ice
         """
         if "SIC" not in cellbox.agg_data or cellbox.agg_data["SIC"] is None:
-            logging.debug(f"No sea ice concentration data in cell {cellbox.id}")
+            logger.debug(f"No sea ice concentration data in cell {cellbox.id}")
             ext_ice = False
         else:
             ext_ice = cellbox.agg_data['SIC'] > self.max_ice

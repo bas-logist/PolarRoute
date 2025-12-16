@@ -1,6 +1,9 @@
 import numpy as np
 import pyproj
 import logging
+
+# Module logger
+logger = logging.getLogger(__name__)
 import shapely
 from polar_route.utils import unit_time, unit_speed, case_from_angle
 from polar_route.exceptions import RouteSmoothingError
@@ -1237,7 +1240,7 @@ class Smoothing:
 
         # Prevents crashing is edge_b is empty.
         if edge_b.start is None:
-            logging.debug('Edge_b is empty')
+            logger.debug('Edge_b is empty')
             return True
             
         edge_a_start_index = edge_a.start['id']
@@ -1540,7 +1543,7 @@ class Smoothing:
 
                 # Introduction of a U-shape
                 if len(add_indices) == 2:
-                        logging.debug('--- Adding in U-shape ---')
+                        logger.debug('--- Adding in U-shape ---')
                         target_a = add_indices[0]
                         target_b = add_indices[1]
                         case_a = add_cases[0]

@@ -6,6 +6,9 @@ import fiona
 import pandas as pd
 import geopandas as gpd
 
+# Module logger
+logger = logging.getLogger(__name__)
+
 from meshiphi.mesh_generation.mesh_builder import MeshBuilder
 
 from polar_route import __version__ as version
@@ -98,7 +101,7 @@ def resimulate_vehicle_cli():
     default_output = "resimulate_vehicle_output.vessel.json"
     
     args = get_args(default_output, mesh_arg=True, config_arg=False)
-    logging.info("{} {}".format(inspect.stack()[0][3][:-4], version))
+    logger.info("{} {}".format(inspect.stack()[0][3][:-4], version))
 
     mesh_json = json.load(args.mesh)
     mesh_config = mesh_json['config']['mesh_info']
@@ -115,7 +118,7 @@ def resimulate_vehicle_cli():
     rebuilt_mesh_json = vp.to_json()
 
     # Saving output
-    logging.info(f"Saving mesh to {args.output}")
+    logger.info(f"Saving mesh to {args.output}")
     with open(args.output, 'w+') as fp:
         json.dump(rebuilt_mesh_json, fp, indent=4)
 
@@ -128,7 +131,7 @@ def add_vehicle_cli():
 
     default_output = "add_vehicle_output.vessel.json"
     args = get_args(default_output, config_arg=True, mesh_arg=True)
-    logging.info("{} {}".format(inspect.stack()[0][3][:-4], version))
+    logger.info("{} {}".format(inspect.stack()[0][3][:-4], version))
 
     mesh_json = json.load(args.mesh)
     vessel_config = json.load(args.config)
@@ -138,7 +141,7 @@ def add_vehicle_cli():
     vp.model_performance()
 
     info = vp.to_json()
-    logging.info(f"Saving vp mesh to {args.output}")
+    logger.info(f"Saving vp mesh to {args.output}")
     with open(args.output, 'w+') as fp:
         json.dump(info, fp, indent=4)
 
@@ -150,9 +153,9 @@ def optimise_routes_cli():
     """
     args = get_args("optimise_routes_output.route.json",
                     config_arg=True, mesh_arg=True ,waypoints_arg= True)
-    logging.info("{} {}".format(inspect.stack()[0][3][:-4], version))
+    logger.info("{} {}".format(inspect.stack()[0][3][:-4], version))
 
-    logging.info("Initialising Route Planner")
+    logger.info("Initialising Route Planner")
     # Initialise the route planner
     rp = RoutePlanner(args.mesh.name, args.config.name)
 
@@ -166,7 +169,7 @@ def optimise_routes_cli():
     waypoints_df = pd.read_csv(args.waypoints.name)
     mesh_json['waypoints'] = waypoints_df.to_dict()
 
-    logging.info("Calculating Dijkstra routes")
+    logger.info("Calculating Dijkstra routes")
     dijkstra_routes = rp.compute_routes(args.waypoints.name)
 
     # Update mesh if splitting around waypoints
@@ -185,7 +188,7 @@ def optimise_routes_cli():
         dijkstra_output_file_strs[-2] += '_dijkstra'
         dijkstra_output_file = '.'.join(dijkstra_output_file_strs)
 
-        logging.info(f"\tOutputting dijkstra path to {dijkstra_output_file}")
+        logger.info(f"\tOutputting dijkstra path to {dijkstra_output_file}")
         with open(dijkstra_output_file, 'w+') as fp:
             json.dump(info_dijkstra, fp, indent=4)
 
@@ -193,18 +196,18 @@ def optimise_routes_cli():
         if args.path_geojson:
             dijkstra_output_file_strs[-1] = 'geojson'
             dijkstra_output_file = '.'.join(dijkstra_output_file_strs)
-            logging.info(f"\tExtracting standalone dijkstra path GeoJSON to {dijkstra_output_file}")
+            logger.info(f"\tExtracting standalone dijkstra path GeoJSON to {dijkstra_output_file}")
             with open(dijkstra_output_file, 'w+') as fp:
                 json.dump(info_dijkstra['paths'], fp, indent=4)
 
-    logging.info("Calculating smoothed routes")
+    logger.info("Calculating smoothed routes")
     smoothed_routes = rp.compute_smoothed_routes()
 
     info = mesh_json
     info['paths'] = smoothed_routes
 
 
-    logging.info(f"\tOutputting smoothed route(s) to {output_file}")
+    logger.info(f"\tOutputting smoothed route(s) to {output_file}")
     with open(output_file, 'w+') as fp:
         json.dump(info, fp, indent=4)
 
@@ -213,30 +216,30 @@ def optimise_routes_cli():
         # Create GeoJSON filename
         output_file_strs[-1] = 'geojson'
         output_file = '.'.join(output_file_strs)
-        logging.info(f"\tExtracting standalone path GeoJSON to {output_file}")
+        logger.info(f"\tExtracting standalone path GeoJSON to {output_file}")
         with open(output_file, 'w+') as fp:
                 json.dump(info['paths'], fp, indent=4)
 
     # Optional output of smoothed route(s) to standalone KML file(s)
     if args.path_kml:
-        logging.info(f"\tExtracting standalone path(s) to KML file(s)")
+        logger.info(f"\tExtracting standalone path(s) to KML file(s)")
         for route in smoothed_routes['features']:
             from_wp = route["properties"]["from"].replace(" ", "_")
             to_wp = route["properties"]["to"].replace(" ", "_")
             route_output_str = '.'.join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".kml"
             gdf = gpd.GeoDataFrame.from_features([route])
-            logging.info(f"Saving route to {route_output_str}")
+            logger.info(f"Saving route to {route_output_str}")
             gdf['geometry'].to_file(route_output_str, "KML")
 
     # Optional output of smoothed route(s) to standalone GPX file(s)
     if args.path_gpx:
-        logging.info(f"\tExtracting standalone path(s) to GPX file(s)")
+        logger.info(f"\tExtracting standalone path(s) to GPX file(s)")
         for route in smoothed_routes['features']:
             from_wp = route["properties"]["from"].replace(" ", "_")
             to_wp = route["properties"]["to"].replace(" ", "_")
             route_output_str = '.'.join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".gpx"
             gdf = gpd.GeoDataFrame.from_features([route])
-            logging.info(f"Saving route to {route_output_str}")
+            logger.info(f"Saving route to {route_output_str}")
             gdf['geometry'].to_file(route_output_str, "GPX")
 
     # Optional output of Chart Track formatted csv
@@ -250,7 +253,7 @@ def optimise_routes_cli():
         for i, csv_str in enumerate(csv_strs):
             output_file_strs[1] = f'r{i}'
             output_file = '.'.join(output_file_strs)
-            logging.info(f"\tOutputting ChartTracker CSV to {output_file}")
+            logger.info(f"\tOutputting ChartTracker CSV to {output_file}")
             with open(output_file, 'w+') as fp:
                 fp.write(csv_str)
         
@@ -265,7 +268,7 @@ def extract_routes_cli():
     output_file_strs = output_file.split('.')
 
     route_file = json.load(args.mesh)
-    logging.info(f"Extracting routes from: {args.mesh.name} with base output: {args.output}")
+    logger.info(f"Extracting routes from: {args.mesh.name} with base output: {args.output}")
 
     # Check if input is just a route file or if the routes are nested within a mesh
     if route_file.get("type") == "FeatureCollection":
@@ -276,7 +279,7 @@ def extract_routes_cli():
         else:
             routes = []
             
-    logging.info(f"{len(routes)} routes found in mesh")
+    logger.info(f"{len(routes)} routes found in mesh")
 
     if output_file_strs[-1] in ["json", "geojson"]:
         geojson_outputs = extract_geojson_routes(route_file)
@@ -288,42 +291,42 @@ def extract_routes_cli():
             to_wp = route["properties"]["to"].replace(" ", "_")
             route_output_str = '.'.join(output_file_strs[:-1]) + "_" + from_wp + to_wp + "." + output_file_strs[-1]
             
-            logging.info(f"Saving route to {route_output_str}")
+            logger.info(f"Saving route to {route_output_str}")
             with open(route_output_str, "w") as f:
                 json.dump(geojson_output, f, indent=4)
 
     elif output_file_strs[-1] == "gpx":
-        logging.info("Extracting routes in gpx format")
+        logger.info("Extracting routes in gpx format")
         for route in routes:
             from_wp = route["properties"]["from"].replace(" ", "_")
             to_wp = route["properties"]["to"].replace(" ", "_")
             route_output_str = '.'.join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".gpx"
-            gdf = gpd.GeoDataFrame.from_features([route])
-            logging.info(f"Saving route to {route_output_str}")
+            gdf = gpd.GeoDataFrame.from_features([geojson_output])
+            logger.info(f"Saving route to {route_output_str}")
             gdf['geometry'].to_file(route_output_str, "GPX")
 
     elif output_file_strs[-1] == "kml":
-        logging.info("Extracting routes in kml format")
+        logger.info("Extracting routes in kml format")
         for route in routes:
             from_wp = route["properties"]["from"].replace(" ", "_")
             to_wp = route["properties"]["to"].replace(" ", "_")
             route_output_str = '.'.join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".kml"
-            gdf = gpd.GeoDataFrame.from_features([route])
-            logging.info(f"Saving route to {route_output_str}")
+            gdf = gpd.GeoDataFrame.from_features([geojson_output])
+            logger.info(f"Saving route to {route_output_str}")
             gdf['geometry'].to_file(route_output_str, "KML")
 
     elif output_file_strs[-1] == "csv":
-        logging.info("Extracting routes in ChartTrack csv format")
+        logger.info("Extracting routes in ChartTrack csv format")
         for route in routes:
             from_wp = route["properties"]["from"].replace(" ", "_")
             to_wp = route["properties"]["to"].replace(" ", "_")
             route_output_str = '.'.join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".csv"
             csv_route = to_chart_track_csv(route)
-            logging.info(f"Saving route to {route_output_str}")
+            logger.info(f"Saving route to {route_output_str}")
             with open(route_output_str, "w") as f:
                 f.write(csv_route)
     else:
-        logging.warning("Unrecognised output type! No routes have been extracted!")
+        logger.warning("Unrecognised output type! No routes have been extracted!")
         
 
 @timed_call
@@ -333,9 +336,9 @@ def calculate_route_cli():
     """
     args = get_args("calculated_route.json",
                     config_arg = False, mesh_arg = True, waypoints_arg = True)
-    logging.info("{} {}".format(inspect.stack()[0][3][:-4], version))
+    logger.info("{} {}".format(inspect.stack()[0][3][:-4], version))
 
-    logging.info(f"Calculating the cost of route {args.waypoints.name} from mesh {args.mesh.name}")
+    logger.info(f"Calculating the cost of route {args.waypoints.name} from mesh {args.mesh.name}")
 
     df, from_wp, to_wp, route_type = load_route(route_file = args.waypoints.name)
     
@@ -348,8 +351,8 @@ def calculate_route_cli():
         max_time = convert_decimal_days(calc_route["features"][0]["properties"]["traveltime"][-1])
         max_fuel = round(calc_route["features"][0]["properties"]["fuel"][-1],2)
 
-        logging.info(f"Calculated route has travel time: {max_time} and fuel cost: {max_fuel} tons")
+        logger.info(f"Calculated route has travel time: {max_time} and fuel cost: {max_fuel} tons")
 
-        logging.info(f"Saving calculated route to {args.output}")
+        logger.info(f"Saving calculated route to {args.output}")
         with open(args.output, 'w+') as f:
             json.dump(calc_route, f, indent=4)

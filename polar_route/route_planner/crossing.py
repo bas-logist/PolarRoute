@@ -6,6 +6,9 @@
 """
 import numpy as np
 import logging
+
+# Module logger
+logger = logging.getLogger(__name__)
 from polar_route.utils import unit_time, unit_speed
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -434,12 +437,12 @@ class NewtonianDistance:
         elif abs(self.case)==1 or abs(self.case)==3:
             travel_time, cross_points, cell_points = self._corner()
         else:
-            logging.debug('---> Issue with cell (Xsc,Ysc)={:.2f};{:.2f}'.\
+            logger.debug('---> Issue with cell (Xsc,Ysc)={:.2f};{:.2f}' + \
                 format(self.source_cellbox.get_bounds().getcx(),self.source_cellbox.get_bounds().getcy()))
 
             travel_time  = [np.inf, np.inf]
             cross_points = [np.nan, np.nan]
             cell_points  = [np.nan, np.nan]
 
-        logging.debug(f"NewtonianDistance.value >> TravelTime >> {travel_time}" )
+        logger.debug(f"NewtonianDistance.value >> TravelTime >> {travel_time}" )
         return travel_time, cross_points, cell_points, self.case
