@@ -37,7 +37,9 @@ class SDA(AbstractShip):
         speed = cellbox.agg_data['speed']
         ice_resistance = None
 
-        if all(k in cellbox.agg_data for k in ("SIC", "thickness", "density")):
+        if all(k in cellbox.agg_data for k in ("SIC", "thickness", "density")) and all(
+            cellbox.agg_data[k] is not None for k in ("SIC", "thickness", "density")
+        ):
             logger.debug("Adjusting speed according to ice resistance model")
             if cellbox.agg_data['SIC'] == 0.0:
                 ice_resistance = 0.
@@ -81,7 +83,6 @@ class SDA(AbstractShip):
         cellbox.agg_data['fuel'] = [fuel_eq(cellbox.agg_data['speed'][i], r)
                                     for i, r in enumerate(cellbox.agg_data['resistance'])]
         return cellbox
-
 
     def model_resistance(self, cellbox):
         """
