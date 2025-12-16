@@ -1,6 +1,9 @@
 import numpy as np
 import logging
 
+# Module logger
+logger = logging.getLogger(__name__)
+
 from meshiphi.mesh_generation.environment_mesh import EnvironmentMesh
 from meshiphi.mesh_generation.direction import Direction
 from polar_route.vessel_performance.vessel_factory import VesselFactory
@@ -21,7 +24,7 @@ class VesselPerformanceModeller:
             vessel_config (dict): a dictionary loaded from a vessel config json file
             custom_vessel (class): a custom vessel object that specifies a set of performance and accessibility models
         """
-        logging.info("Initialising Vessel Performance Modeller")
+        logger.info("Initialising Vessel Performance Modeller")
         validate_vessel_config(vessel_config)
 
         self.env_mesh = EnvironmentMesh.load_from_json(env_mesh_json)
@@ -32,7 +35,7 @@ class VesselPerformanceModeller:
             self.config['neighbour_splitting'] = True
 
         if custom_vessel is not None:
-            logging.info(f"Loading custom vessel class: {type(custom_vessel).__name__}")
+            logger.info(f"Loading custom vessel class: {type(custom_vessel).__name__}")
             self.vessel = custom_vessel(vessel_config)
         else:
             self.vessel = VesselFactory.get_vessel(vessel_config)
@@ -51,7 +54,7 @@ class VesselPerformanceModeller:
             access_values = self.vessel.model_accessibility(cellbox)
             self.env_mesh.update_cellbox(i, access_values)
         inaccessible_nodes = [c.id for c in self.env_mesh.agg_cellboxes if c.agg_data['inaccessible']]
-        logging.info(f"Found {len(inaccessible_nodes)} inaccessible cells in the mesh")
+        logger.info(f"Found {len(inaccessible_nodes)} inaccessible cells in the mesh")
         if self.config['neighbour_splitting']:
             # Split any cells that neighbour inaccessible cells to match their size
             self.split_neighbouring_cells(inaccessible_nodes)
@@ -102,7 +105,7 @@ class VesselPerformanceModeller:
             inaccessible_nodes (list): List of inaccessible nodes to split around
 
         """
-        logging.info("Splitting around inaccessible cells")
+        logger.info("Splitting around inaccessible cells")
         for in_node in inaccessible_nodes:
             in_cb = self.env_mesh.get_cellbox(in_node)
             neighbour_nodes = self.get_all_neighbours(in_node)

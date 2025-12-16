@@ -3,6 +3,9 @@ from polar_route.route_planner.waypoint import Waypoint
 import numpy as np
 import logging
 
+# Module logger
+logger = logging.getLogger(__name__)
+
 
 class SourceWaypoint(Waypoint):
     """
@@ -109,17 +112,17 @@ class SourceWaypoint(Waypoint):
             return path_index
 
     def log_routing_table(self):
-        logging.debug(f'Routing table of {self.cellbox_indx} source waypoint:')
+        logger.debug(f'Routing table of {self.cellbox_indx} source waypoint:')
         for x in self.routing_table.keys():
-            logging.debug(f"To {x}, through node_idx: {self.routing_table[x].get_node_index()}")
+            logger.debug(f"To {x}, through node_idx: {self.routing_table[x].get_node_index()}")
 
     def log_detailed_routing_info(self):
-        logging.debug(f'Routing table of {self.cellbox_indx} source waypoint:')
+        logger.debug(f'Routing table of {self.cellbox_indx} source waypoint:')
         for x in self.routing_table.keys():
-            logging.debug(f"To {x}, through node_idx: {self.routing_table[x].get_node_index()}")
-            logging.debug("using segments >> ")
+            logger.debug(f"To {x}, through node_idx: {self.routing_table[x].get_node_index()}")
+            logger.debug("using segments >> ")
             for s in self.routing_table[x].get_path():
-                logging.debug(s.to_str())
+                logger.debug(s.to_str())
 
     def get_obj(self, node_indx, obj):
         """
