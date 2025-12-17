@@ -5,17 +5,24 @@
 
 import json
 import pytest
-import time
 from pathlib import Path
-
-from polar_route import VesselPerformanceModeller
 
 import logging
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
-# Import test file discovery
-from .test_utils import get_mesh_test_files
+# Import test utilities
+from .utils import (
+    get_mesh_test_files,
+    test_mesh_cellbox_count as _test_mesh_cellbox_count,
+    test_mesh_cellbox_ids as _test_mesh_cellbox_ids,
+    test_mesh_cellbox_values as _test_mesh_cellbox_values,
+    test_mesh_cellbox_attributes as _test_mesh_cellbox_attributes,
+    test_mesh_neighbour_graph_count as _test_mesh_neighbour_graph_count,
+    test_mesh_neighbour_graph_ids as _test_mesh_neighbour_graph_ids,
+    test_mesh_neighbour_graph_values as _test_mesh_neighbour_graph_values,
+    calculate_vessel_mesh
+)
 
 # Dynamically discover test files
 INPUT_MESHES, OUTPUT_MESHES = get_mesh_test_files()
@@ -53,45 +60,18 @@ def mesh_pair(request):
         input_mesh = json.load(fp)
     # Extract out vessel config from reference mesh
     vessel_config = old_mesh['config']['vessel_info']
-    new_mesh = calculate_vessel_mesh(input_mesh, vessel_config)
+    
+    # Merge vessel config with input mesh config
+    config = input_mesh.copy()
+    if 'config' not in config:
+        config['config'] = {}
+    config['config']['vessel_info'] = vessel_config
+    
+    new_mesh = calculate_vessel_mesh(config)
     
     return [old_mesh, new_mesh]
 
-def calculate_vessel_mesh(mesh_json, vessel_config):
-    """
-    Creates a new, pruned and updated mesh from the environmental mesh
-
-    Args:
-        mesh_json (json): Environmental mesh to modify with vessel parameters
-        vessel_config (json): Vessel information to prune the env mesh with
-
-    Returns:
-        json: Newly regenerated mesh
-    """
-    start = time.perf_counter()
-
-    vessel_modeller = VesselPerformanceModeller(mesh_json, vessel_config)
-    vessel_modeller.model_accessibility()
-    vessel_modeller.model_performance()
-
-    end = time.perf_counter()
-
-    cellbox_count = len(vessel_modeller.env_mesh.agg_cellboxes)
-    LOGGER.info(f'Vessel simulated against {cellbox_count} cellboxes in {end - start} seconds')
-
-    return vessel_modeller.to_json()
-
-# Import test functions for use in wrappers
-from .vessel_test_functions import (
-    test_mesh_cellbox_count as _test_mesh_cellbox_count,
-    test_mesh_cellbox_ids as _test_mesh_cellbox_ids,
-    test_mesh_cellbox_values as _test_mesh_cellbox_values,
-    test_mesh_cellbox_attributes as _test_mesh_cellbox_attributes,
-    test_mesh_neighbour_graph_count as _test_mesh_neighbour_graph_count,
-    test_mesh_neighbour_graph_ids as _test_mesh_neighbour_graph_ids,
-    test_mesh_neighbour_graph_values as _test_mesh_neighbour_graph_values
-)
-
+# Test wrapper functions that use the mesh_pair fixture
 def test_vessel_mesh_cellbox_count(mesh_pair):
     """Test mesh cellbox count matches between old and new"""
     _test_mesh_cellbox_count(mesh_pair)

@@ -1,12 +1,16 @@
 import json
 import pytest
-import time
 
-from polar_route.route_planner.route_planner import RoutePlanner
-from .route_test_functions import extract_waypoints
-from .route_test_functions import extract_route_info
-
-from .test_utils import get_route_test_files
+from .utils import (
+    get_route_test_files,
+    calculate_smoothed_route,
+    test_route_coordinates as _test_route_coordinates,
+    test_waypoint_names as _test_waypoint_names,
+    test_time as _test_time,
+    test_fuel_battery as _test_fuel_battery,
+    test_cell_indices as _test_cell_indices,
+    test_cases as _test_cases
+)
 
 import logging
 LOGGER = logging.getLogger(__name__)
@@ -32,52 +36,13 @@ def route_pair(request):
     # Load reference JSON
     with open(request.param, 'r') as fp:
         old_route = json.load(fp)
-    route_info = extract_route_info(old_route)
+    route_info = old_route['config']['route_info']
     # Create new json (cast old to dict to create copy to avoid modifying)
     new_route = calculate_smoothed_route(route_info, dict(old_route))
 
     return [old_route, new_route]
 
-# Generating new outputs
-def calculate_smoothed_route(config, mesh):
-    """
-    Calculates the fuel-optimised route, with dijkstra but no smoothing
-
-    Args:
-        route_filename (str): Filename of regression test route
-
-    Returns:
-        json: New route output
-    """
-    start = time.perf_counter()
-
-    # Initial set up
-    waypoints   = extract_waypoints(mesh)
-
-    # Calculate smoothed route
-    rp = RoutePlanner(mesh, config)
-    dijkstra_route = rp.compute_routes(waypoints)
-    smoothed_route = rp.compute_smoothed_routes()
-    
-    # Generate json to compare to old output
-    new_route = mesh
-    new_route['paths'] = smoothed_route
-
-    end = time.perf_counter()
-    LOGGER.info(f'Route smoothed in {end - start} seconds')
-
-    return new_route
-
-# Test functions that use the route_pair fixture
-from .route_test_functions import (
-    test_route_coordinates as _test_route_coordinates,
-    test_waypoint_names as _test_waypoint_names,
-    test_time as _test_time,
-    test_fuel_battery as _test_fuel_battery,
-    test_cell_indices as _test_cell_indices,
-    test_cases as _test_cases
-)
-
+# Test wrapper functions that use the route_pair fixture
 def test_route_coordinates(route_pair):
     """Test route coordinates match between old and new"""
     _test_route_coordinates(route_pair)
