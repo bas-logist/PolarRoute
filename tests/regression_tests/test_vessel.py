@@ -81,41 +81,41 @@ def calculate_vessel_mesh(mesh_json, vessel_config):
 
     return vessel_modeller.to_json()
 
-# Test functions that use the mesh_pair fixture
+# Import test functions for use in wrappers
 from .vessel_test_functions import (
-    test_mesh_cellbox_count,
-    test_mesh_cellbox_ids,
-    test_mesh_cellbox_values,
-    test_mesh_cellbox_attributes,
-    test_mesh_neighbour_graph_count,
-    test_mesh_neighbour_graph_ids,
-    test_mesh_neighbour_graph_values
+    test_mesh_cellbox_count as _test_mesh_cellbox_count,
+    test_mesh_cellbox_ids as _test_mesh_cellbox_ids,
+    test_mesh_cellbox_values as _test_mesh_cellbox_values,
+    test_mesh_cellbox_attributes as _test_mesh_cellbox_attributes,
+    test_mesh_neighbour_graph_count as _test_mesh_neighbour_graph_count,
+    test_mesh_neighbour_graph_ids as _test_mesh_neighbour_graph_ids,
+    test_mesh_neighbour_graph_values as _test_mesh_neighbour_graph_values
 )
 
 def test_vessel_mesh_cellbox_count(mesh_pair):
     """Test mesh cellbox count matches between old and new"""
-    test_mesh_cellbox_count(mesh_pair)
+    _test_mesh_cellbox_count(mesh_pair)
 
 def test_vessel_mesh_cellbox_ids(mesh_pair):
     """Test mesh cellbox IDs match between old and new"""
-    test_mesh_cellbox_ids(mesh_pair)
+    _test_mesh_cellbox_ids(mesh_pair)
 
 def test_vessel_mesh_cellbox_values(mesh_pair):
     """Test mesh cellbox values match between old and new"""
-    test_mesh_cellbox_values(mesh_pair)
+    _test_mesh_cellbox_values(mesh_pair)
 
 def test_vessel_mesh_cellbox_attributes(mesh_pair):
     """Test mesh cellbox attributes match between old and new"""
-    test_mesh_cellbox_attributes(mesh_pair)
+    _test_mesh_cellbox_attributes(mesh_pair)
 
 def test_vessel_mesh_neighbour_graph_count(mesh_pair):
     """Test mesh neighbour graph count matches between old and new"""
-    test_mesh_neighbour_graph_count(mesh_pair)
+    _test_mesh_neighbour_graph_count(mesh_pair)
 
 def test_vessel_mesh_neighbour_graph_ids(mesh_pair):
     """Test mesh neighbour graph IDs match between old and new"""
-    test_mesh_neighbour_graph_ids(mesh_pair)
+    _test_mesh_neighbour_graph_ids(mesh_pair)
 
 def test_vessel_mesh_neighbour_graph_values(mesh_pair):
     """Test mesh neighbour graph values match between old and new"""
-    test_mesh_neighbour_graph_values(mesh_pair)
+    _test_mesh_neighbour_graph_values(mesh_pair)
