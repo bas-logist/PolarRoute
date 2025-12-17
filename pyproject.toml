@@ -52,3 +52,7 @@ optimise_routes = "polar_route.cli:optimise_routes_cli"
 calculate_route = "polar_route.cli:calculate_route_cli"
 resimulate_vehicle = "polar_route.cli:resimulate_vehicle_cli"
 extract_routes = "polar_route.cli:extract_routes_cli"
+
+[tool.pytest.ini_options]
+log_cli = true
+log_format = "[%(asctime)s] %(levelname)s : %(message)s"
