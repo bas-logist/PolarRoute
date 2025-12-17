@@ -96,7 +96,7 @@ def calculate_smoothed_route(config: Dict, mesh: Dict) -> Dict:
     """
     start = time.perf_counter()
 
-    waypoints = extract_waypoints(mesh)
+    waypoints = pd.DataFrame(mesh['waypoints'])
     rp = RoutePlanner(mesh, config)
     rp.compute_routes(waypoints)
     smoothed_route = rp.compute_smoothed_routes()
@@ -294,7 +294,7 @@ def test_mesh_neighbour_graph_values(mesh_pair):
     compare_neighbour_graph_values(mesh_pair[0], mesh_pair[1])
 
 # Vessel/Mesh Comparison Helper Functions
-def _compare_set_difference(set_a: set, set_b: set, item_type: str) -> Tuple[List, List]:
+def _compare_set_difference(set_a: set, set_b: set) -> Tuple[List, List]:
     """Helper to compute and return set differences for error messages."""
     missing_from_a = list(set_b - set_a)
     missing_from_b = list(set_a - set_b)
@@ -303,14 +303,14 @@ def _compare_set_difference(set_a: set, set_b: set, item_type: str) -> Tuple[Lis
 def compare_cellbox_count(mesh_a: Dict, mesh_b: Dict) -> None:
     """Compare number of cellboxes between meshes."""
     assert len(mesh_a['cellboxes']) == len(mesh_b['cellboxes']), \
-        f"Incorrect number of cellboxes. Expected: {len(cellboxes_a)}, got: {len(cellboxes_b)}"
+        f"Incorrect number of cellboxes. Expected: {len(mesh_a['cellboxes'])}, got: {len(mesh_b['cellboxes'])}"
 
 def compare_cellbox_ids(mesh_a: Dict, mesh_b: Dict) -> None:
     """Compare cellbox IDs between meshes."""
     ids_a = {cb['id'] for cb in mesh_a['cellboxes']}
     ids_b = {cb['id'] for cb in mesh_b['cellboxes']}
 
-    missing_from_a, missing_from_b = _compare_set_difference(ids_a, ids_b, 'ID')
+    missing_from_a, missing_from_b = _compare_set_difference(ids_a, ids_b)
     
     assert ids_a == ids_b, \
         f"Mismatch in cellbox IDs. New IDs: {missing_from_a}, Missing IDs: {missing_from_b}"
@@ -350,7 +350,7 @@ def compare_cellbox_attributes(mesh_a: Dict, mesh_b: Dict) -> None:
     attrs_a = set(mesh_a['cellboxes'][0].keys())
     attrs_b = set(mesh_b['cellboxes'][0].keys())
 
-    missing_from_a, missing_from_b = _compare_set_difference(attrs_a, attrs_b, 'attribute')
+    missing_from_a, missing_from_b = _compare_set_difference(attrs_a, attrs_b)
     
     assert attrs_a == attrs_b, \
         f"Mismatch in cellbox attributes. New: {missing_from_a}, Missing: {missing_from_b}"
@@ -358,7 +358,7 @@ def compare_cellbox_attributes(mesh_a: Dict, mesh_b: Dict) -> None:
 def compare_neighbour_graph_count(mesh_a: Dict, mesh_b: Dict) -> None:
     """Compare number of nodes in neighbour graphs."""
     assert len(mesh_a['neighbour_graph']) == len(mesh_b['neighbour_graph']), \
-        f"Incorrect node count. Expected: {len(graph_a)}, got: {len(graph_b)}"
+        f"Incorrect node count. Expected: {len(mesh_a['neighbour_graph'])}, got: {len(mesh_b['neighbour_graph'])}"
 
 def compare_neighbour_graph_ids(mesh_a: Dict, mesh_b: Dict) -> None:
     """Compare node IDs in neighbour graphs."""
