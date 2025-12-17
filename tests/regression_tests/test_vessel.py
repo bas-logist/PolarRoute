@@ -37,65 +37,35 @@ def make_mesh_id(mesh_pair):
 MESH_PAIRS = list(zip(INPUT_MESHES, OUTPUT_MESHES))
 MESH_IDS = [make_mesh_id(pair) for pair in MESH_PAIRS]
 
-@pytest.fixture(scope='session', autouse=False, params=MESH_PAIRS, ids=MESH_IDS)
+@pytest.fixture(scope='session', params=MESH_PAIRS, ids=MESH_IDS)
 def mesh_pair(request):
-    """
-    Creates a pair of JSON objects, one newly generated, one as old reference
-    Args:
-        request (fixture):
-            fixture object including list of meshes to regenerate
-
-    Returns:
-        list: old and new mesh jsons for comparison
-    """
-    LOGGER.info(f'Test File: {request.param[1]}')
-
-    input_mesh_file = request.param[0]
-    output_mesh_file = request.param[1]
-    # Open vessel mesh for reference
+    """Creates pair of meshes: reference and newly generated."""
+    input_mesh_file, output_mesh_file = request.param
+    LOGGER.info(f'Test File: {output_mesh_file}')
+    
     with open(output_mesh_file, 'r') as fp:
         old_mesh = json.load(fp)
-    # Open env mesh to generate new vessel mesh
     with open(input_mesh_file, 'r') as fp:
         input_mesh = json.load(fp)
-    # Extract out vessel config from reference mesh
-    vessel_config = old_mesh['config']['vessel_info']
     
-    # Merge vessel config with input mesh config
+    # Merge vessel config from reference into input mesh
     config = input_mesh.copy()
-    if 'config' not in config:
-        config['config'] = {}
-    config['config']['vessel_info'] = vessel_config
+    config.setdefault('config', {})['vessel_info'] = old_mesh['config']['vessel_info']
     
     new_mesh = calculate_vessel_mesh(config)
-    
     return [old_mesh, new_mesh]
 
 # Test functions that use the mesh_pair fixture
-def test_vessel_mesh_cellbox_count(mesh_pair):
-    """Test mesh cellbox count matches between old and new"""
-    compare_cellbox_count(*mesh_pair)
-
-def test_vessel_mesh_cellbox_ids(mesh_pair):
-    """Test mesh cellbox IDs match between old and new"""
-    compare_cellbox_ids(*mesh_pair)
-
-def test_vessel_mesh_cellbox_values(mesh_pair):
-    """Test mesh cellbox values match between old and new"""
-    compare_cellbox_values(*mesh_pair)
-
-def test_vessel_mesh_cellbox_attributes(mesh_pair):
-    """Test mesh cellbox attributes match between old and new"""
-    compare_cellbox_attributes(*mesh_pair)
-
-def test_vessel_mesh_neighbour_graph_count(mesh_pair):
-    """Test mesh neighbour graph count matches between old and new"""
-    compare_neighbour_graph_count(*mesh_pair)
-
-def test_vessel_mesh_neighbour_graph_ids(mesh_pair):
-    """Test mesh neighbour graph IDs match between old and new"""
-    compare_neighbour_graph_ids(*mesh_pair)
-
-def test_vessel_mesh_neighbour_graph_values(mesh_pair):
-    """Test mesh neighbour graph values match between old and new"""
-    compare_neighbour_graph_values(*mesh_pair)
+@pytest.mark.parametrize('compare_func', [
+    compare_cellbox_count,
+    compare_cellbox_ids,
+    compare_cellbox_values,
+    compare_cellbox_attributes,
+    compare_neighbour_graph_count,
+    compare_neighbour_graph_ids,
+    compare_neighbour_graph_values
+], ids=['cellbox_count', 'cellbox_ids', 'cellbox_values', 'cellbox_attributes',
+        'graph_count', 'graph_ids', 'graph_values'])
+def test_vessel_mesh(mesh_pair, compare_func):
+    """Test vessel mesh property matches between old and new"""
+    compare_func(*mesh_pair)
