@@ -96,7 +96,7 @@ def calculate_smoothed_route(config: Dict, mesh: Dict) -> Dict:
     """
     start = time.perf_counter()
 
-    waypoints = pd.DataFrame(mesh['waypoints'])
+    waypoints = extract_waypoints(mesh)
     rp = RoutePlanner(mesh, config)
     rp.compute_routes(waypoints)
     smoothed_route = rp.compute_smoothed_routes()
@@ -135,21 +135,17 @@ def calculate_vessel_mesh(config: Dict) -> Dict:
 
     return vessel_modeller.to_json()
 
-# Route Comparison Test Functions (called directly from test files)
+# Route Comparison Test Functions
 def test_route_coordinates(route_pair):
-    """Test that route coordinates match between old and new."""
     compare_route_coordinates(route_pair[0], route_pair[1])
 
 def test_waypoint_names(route_pair):
-    """Test that waypoint names match between old and new."""
     compare_waypoint_names(route_pair[0], route_pair[1])
     
 def test_time(route_pair):
-    """Test that travel times match between old and new."""
     compare_time(route_pair[0], route_pair[1])
 
 def test_fuel_battery(route_pair):
-    """Test that fuel/battery consumption matches between old and new."""
     path_variables = route_pair[0]['config']['route_info']['path_variables']
     if 'fuel' in path_variables:
         compare_fuel(route_pair[0], route_pair[1])
@@ -157,19 +153,15 @@ def test_fuel_battery(route_pair):
         compare_battery(route_pair[0], route_pair[1])
 
 def test_cell_indices(route_pair):
-    """Test that cell indices match between old and new."""
     compare_cell_indices(route_pair[0], route_pair[1])
 
 def test_cases(route_pair):
-    """Test that direction cases match between old and new."""
     compare_cases(route_pair[0], route_pair[1])
     
 def test_distance(route_pair):
-    """Test that distances match between old and new."""
     compare_distance(route_pair[0], route_pair[1])
     
 def test_speed(route_pair):
-    """Test that speeds match between old and new."""
     compare_speed(route_pair[0], route_pair[1])
 
 # Route Comparison Helper Functions
@@ -302,7 +294,7 @@ def test_mesh_neighbour_graph_values(mesh_pair):
     compare_neighbour_graph_values(mesh_pair[0], mesh_pair[1])
 
 # Vessel/Mesh Comparison Helper Functions
-def _compare_set_difference(set_a: set, set_b: set) -> Tuple[List, List]:
+def _compare_set_difference(set_a: set, set_b: set, item_type: str) -> Tuple[List, List]:
     """Helper to compute and return set differences for error messages."""
     missing_from_a = list(set_b - set_a)
     missing_from_b = list(set_a - set_b)
@@ -311,14 +303,14 @@ def _compare_set_difference(set_a: set, set_b: set) -> Tuple[List, List]:
 def compare_cellbox_count(mesh_a: Dict, mesh_b: Dict) -> None:
     """Compare number of cellboxes between meshes."""
     assert len(mesh_a['cellboxes']) == len(mesh_b['cellboxes']), \
-        f"Incorrect number of cellboxes. Expected: {len(mesh_a['cellboxes'])}, got: {len(mesh_b['cellboxes'])}"
+        f"Incorrect number of cellboxes. Expected: {len(cellboxes_a)}, got: {len(cellboxes_b)}"
 
 def compare_cellbox_ids(mesh_a: Dict, mesh_b: Dict) -> None:
     """Compare cellbox IDs between meshes."""
     ids_a = {cb['id'] for cb in mesh_a['cellboxes']}
     ids_b = {cb['id'] for cb in mesh_b['cellboxes']}
 
-    missing_from_a, missing_from_b = _compare_set_difference(ids_a, ids_b)
+    missing_from_a, missing_from_b = _compare_set_difference(ids_a, ids_b, 'ID')
     
     assert ids_a == ids_b, \
         f"Mismatch in cellbox IDs. New IDs: {missing_from_a}, Missing IDs: {missing_from_b}"
@@ -358,7 +350,7 @@ def compare_cellbox_attributes(mesh_a: Dict, mesh_b: Dict) -> None:
     attrs_a = set(mesh_a['cellboxes'][0].keys())
     attrs_b = set(mesh_b['cellboxes'][0].keys())
 
-    missing_from_a, missing_from_b = _compare_set_difference(attrs_a, attrs_b)
+    missing_from_a, missing_from_b = _compare_set_difference(attrs_a, attrs_b, 'attribute')
     
     assert attrs_a == attrs_b, \
         f"Mismatch in cellbox attributes. New: {missing_from_a}, Missing: {missing_from_b}"
@@ -366,14 +358,14 @@ def compare_cellbox_attributes(mesh_a: Dict, mesh_b: Dict) -> None:
 def compare_neighbour_graph_count(mesh_a: Dict, mesh_b: Dict) -> None:
     """Compare number of nodes in neighbour graphs."""
     assert len(mesh_a['neighbour_graph']) == len(mesh_b['neighbour_graph']), \
-        f"Incorrect node count. Expected: {len(mesh_a['neighbour_graph'])}, got: {len(mesh_b['neighbour_graph'])}"
+        f"Incorrect node count. Expected: {len(graph_a)}, got: {len(graph_b)}"
 
 def compare_neighbour_graph_ids(mesh_a: Dict, mesh_b: Dict) -> None:
     """Compare node IDs in neighbour graphs."""
     ids_a = set(mesh_a['neighbour_graph'].keys())
     ids_b = set(mesh_b['neighbour_graph'].keys())
 
-    missing_from_a, missing_from_b = _compare_set_difference(ids_a, ids_b)
+    missing_from_a, missing_from_b = _compare_set_difference(ids_a, ids_b, 'node')
     
     assert ids_a == ids_b, \
         f"Mismatch in graph nodes. New: {len(missing_from_a)}, Missing: {len(missing_from_b)}"
