@@ -135,35 +135,6 @@ def calculate_vessel_mesh(config: Dict) -> Dict:
 
     return vessel_modeller.to_json()
 
-# Route Comparison Test Functions
-def test_route_coordinates(route_pair):
-    compare_route_coordinates(route_pair[0], route_pair[1])
-
-def test_waypoint_names(route_pair):
-    compare_waypoint_names(route_pair[0], route_pair[1])
-    
-def test_time(route_pair):
-    compare_time(route_pair[0], route_pair[1])
-
-def test_fuel_battery(route_pair):
-    path_variables = route_pair[0]['config']['route_info']['path_variables']
-    if 'fuel' in path_variables:
-        compare_fuel(route_pair[0], route_pair[1])
-    if 'battery' in path_variables:
-        compare_battery(route_pair[0], route_pair[1])
-
-def test_cell_indices(route_pair):
-    compare_cell_indices(route_pair[0], route_pair[1])
-
-def test_cases(route_pair):
-    compare_cases(route_pair[0], route_pair[1])
-    
-def test_distance(route_pair):
-    compare_distance(route_pair[0], route_pair[1])
-    
-def test_speed(route_pair):
-    compare_speed(route_pair[0], route_pair[1])
-
 # Route Comparison Helper Functions
 def _compare_property_arrays(route_a: Dict, route_b: Dict, property_name: str, 
                              should_round: bool = True) -> None:
@@ -243,55 +214,14 @@ def compare_waypoint_names(route_a: Dict, route_b: Dict) -> None:
     assert path_a['to'] == path_b['to'], \
         f"Waypoint destination names don't match! Expected {path_a['to']}, got {path_b['to']}"
 
-def compare_time(route_a: Dict, route_b: Dict) -> None:
-    """Compare travel times."""
-    _compare_property_arrays(route_a, route_b, 'traveltime')
-
-def compare_fuel(route_a: Dict, route_b: Dict) -> None:
-    """Compare fuel consumption."""
-    _compare_property_arrays(route_a, route_b, 'fuel')
-
-def compare_battery(route_a: Dict, route_b: Dict) -> None:
-    """Compare battery consumption."""
-    _compare_property_arrays(route_a, route_b, 'battery')
-
-def compare_distance(route_a: Dict, route_b: Dict) -> None:
-    """Compare distances."""
-    _compare_property_arrays(route_a, route_b, 'distance')
-
-def compare_speed(route_a: Dict, route_b: Dict) -> None:
-    """Compare speeds."""
-    _compare_property_arrays(route_a, route_b, 'speed')
-
-def compare_cell_indices(route_a: Dict, route_b: Dict) -> None:
-    """Compare cell indices (optional property)."""
-    _compare_optional_property(route_a, route_b, 'CellIndices')
-
-def compare_cases(route_a: Dict, route_b: Dict) -> None:
-    """Compare direction cases (optional property)."""
-    _compare_optional_property(route_a, route_b, 'cases')
-
-# Vessel/Mesh Comparison Test Functions
-def test_mesh_cellbox_count(mesh_pair):
-    compare_cellbox_count(mesh_pair[0], mesh_pair[1])
-
-def test_mesh_cellbox_ids(mesh_pair):
-    compare_cellbox_ids(mesh_pair[0], mesh_pair[1])
-
-def test_mesh_cellbox_values(mesh_pair):
-    compare_cellbox_values(mesh_pair[0], mesh_pair[1])
-
-def test_mesh_cellbox_attributes(mesh_pair):
-    compare_cellbox_attributes(mesh_pair[0], mesh_pair[1])
-
-def test_mesh_neighbour_graph_count(mesh_pair):
-    compare_neighbour_graph_count(mesh_pair[0], mesh_pair[1])
-
-def test_mesh_neighbour_graph_ids(mesh_pair):
-    compare_neighbour_graph_ids(mesh_pair[0], mesh_pair[1])
-
-def test_mesh_neighbour_graph_values(mesh_pair):
-    compare_neighbour_graph_values(mesh_pair[0], mesh_pair[1])
+# Simple property comparison wrappers
+compare_time = lambda route_a, route_b: _compare_property_arrays(route_a, route_b, 'traveltime')
+compare_fuel = lambda route_a, route_b: _compare_property_arrays(route_a, route_b, 'fuel')
+compare_battery = lambda route_a, route_b: _compare_property_arrays(route_a, route_b, 'battery')
+compare_distance = lambda route_a, route_b: _compare_property_arrays(route_a, route_b, 'distance')
+compare_speed = lambda route_a, route_b: _compare_property_arrays(route_a, route_b, 'speed')
+compare_cell_indices = lambda route_a, route_b: _compare_optional_property(route_a, route_b, 'CellIndices')
+compare_cases = lambda route_a, route_b: _compare_optional_property(route_a, route_b, 'cases')
 
 # Vessel/Mesh Comparison Helper Functions
 def _compare_set_difference(set_a: set, set_b: set) -> Tuple[List, List]:
@@ -365,7 +295,7 @@ def compare_neighbour_graph_ids(mesh_a: Dict, mesh_b: Dict) -> None:
     ids_a = set(mesh_a['neighbour_graph'].keys())
     ids_b = set(mesh_b['neighbour_graph'].keys())
 
-    missing_from_a, missing_from_b = _compare_set_difference(ids_a, ids_b, 'node')
+    missing_from_a, missing_from_b = _compare_set_difference(ids_a, ids_b)
     
     assert ids_a == ids_b, \
         f"Mismatch in graph nodes. New: {len(missing_from_a)}, Missing: {len(missing_from_b)}"

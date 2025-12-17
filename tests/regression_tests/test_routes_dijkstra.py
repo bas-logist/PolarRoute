@@ -4,12 +4,13 @@ import pytest
 from .utils import (
     get_route_test_files,
     calculate_dijkstra_route,
-    test_route_coordinates as _test_route_coordinates,
-    test_waypoint_names as _test_waypoint_names,
-    test_time as _test_time,
-    test_fuel_battery as _test_fuel_battery,
-    test_cell_indices as _test_cell_indices,
-    test_cases as _test_cases
+    compare_route_coordinates,
+    compare_waypoint_names,
+    compare_time,
+    compare_fuel,
+    compare_battery,
+    compare_cell_indices,
+    compare_cases
 )
 
 import logging
@@ -43,27 +44,31 @@ def route_pair(request):
 
     return [old_route, new_route]
 
-# Test wrapper functions that use the route_pair fixture
+# Test functions that use the route_pair fixture
 def test_route_coordinates(route_pair):
     """Test route coordinates match between old and new"""
-    _test_route_coordinates(route_pair)
+    compare_route_coordinates(*route_pair)
 
 def test_waypoint_names(route_pair):
     """Test waypoint names match between old and new"""
-    _test_waypoint_names(route_pair)
+    compare_waypoint_names(*route_pair)
 
 def test_time(route_pair):
     """Test travel times match between old and new"""
-    _test_time(route_pair)
+    compare_time(*route_pair)
 
 def test_fuel_battery(route_pair):
     """Test fuel/battery consumption matches between old and new"""
-    _test_fuel_battery(route_pair)
+    path_variables = route_pair[0]['config']['route_info']['path_variables']
+    if 'fuel' in path_variables:
+        compare_fuel(*route_pair)
+    if 'battery' in path_variables:
+        compare_battery(*route_pair)
 
 def test_cell_indices(route_pair):
     """Test cell indices match between old and new"""
-    _test_cell_indices(route_pair)
+    compare_cell_indices(*route_pair)
 
 def test_cases(route_pair):
     """Test case information matches between old and new"""
-    _test_cases(route_pair)
+    compare_cases(*route_pair)
