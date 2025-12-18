@@ -22,6 +22,7 @@ TEST_ROUTES = get_route_test_files('smoothed')
 
 # Pairing old and new outputs
 @pytest.fixture(scope='session', params=TEST_ROUTES)
+@pytest.mark.slow
 def route_pair(request):
     """Creates pair of routes: reference JSON and newly generated."""
     LOGGER.info(f'Test File: {request.param}')
@@ -40,10 +41,12 @@ def route_pair(request):
     compare_cell_indices,
     compare_cases
 ], ids=['coordinates', 'waypoint_names', 'time', 'cell_indices', 'cases'])
+@pytest.mark.slow
 def test_route_property(route_pair, compare_func):
     """Test route property matches between old and new"""
     compare_func(*route_pair)
 
+@pytest.mark.slow
 def test_fuel_battery(route_pair):
     """Test fuel/battery consumption matches between old and new"""
     path_variables = route_pair[0]['config']['route_info']['path_variables']
