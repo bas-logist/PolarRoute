@@ -32,6 +32,23 @@ To allow for validation of changes, a suite of regression tests have been provid
 | `route_planner.py`      |                                                  |
 |                         |                                                  |
 
+The smoothing routes tests are slow (>20 mins). For faster testing during development,
+you can use the following:
+
+```
+# Run only fast tests (skip smoothed routes)
+pytest tests/regression_tests/ -m "not slow"
+
+# Run only slow tests (when needed)
+pytest tests/regression_tests/ -m "slow"
+```
+We can also run tests in parallel using `pytest-xdist` (see `tests/requirements.txt`).
+
+For example:
+
+```
+pytest -n auto tests/regression_tests/ -m "not slow"
+```
 
 ## Testing files
 Some updates to PolarRoute may result in changes to meshes calculated in our tests suite (*such as adding additional attributes to the cellbox object*). These changes will cause the test suite to fail, though the mode of failure should be predictable. 
