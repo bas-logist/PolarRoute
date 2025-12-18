@@ -22,7 +22,6 @@ TEST_ROUTES = get_route_test_files('smoothed')
 
 # Pairing old and new outputs
 @pytest.fixture(scope='session', params=TEST_ROUTES)
-@pytest.mark.slow
 def route_pair(request):
     """Creates pair of routes: reference JSON and newly generated."""
     LOGGER.info(f'Test File: {request.param}')
