@@ -32,3 +32,4 @@ Contents:
    ./sections/Vehicle_specifics
    ./sections/Route_calculation
    ./sections/Route_optimisation
+   ./sections/Developer
