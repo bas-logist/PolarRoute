@@ -437,7 +437,6 @@ def route_calc(df, from_wp, to_wp, mesh, route_type):
     # Initialise segment costs with zero values at start point of path
     traveltimes = [0.0]
     distances = [0.0]
-    print(user_track)
     cellboxes = [mesh_gdf.iloc[user_track['CellID'].iloc[0]]]
     cases = [1]
 
