@@ -9,7 +9,6 @@ from polar_route.utils import gpx_route_import
 from polar_route.route_planner.crossing import traveltime_in_cell
 from polar_route.route_planner.crossing_smoothing import rhumb_line_distance, dist_around_globe, rhumb_traveltime_in_cell
 
-
 # Define ordering of cases in array data
 direction = [1, 2, 3, 4, -1, -2, -3, -4]
 
@@ -115,7 +114,6 @@ def load_route(route_file):
             from_wp (str):  Name of start waypoint
             to_wp (str):    Name of end waypoint
             route_type(str):Type of route, either 'smoothed' or 'dijkstra' 
-
     """
     logging.info(f"Loading route from: {route_file}")
     # Loading route from csv file
@@ -252,47 +250,102 @@ def find_intersections(df, mesh):
     return track_points
 
 
-def order_track(df, track_points):
+def order_track(df, track_points, mesh_gdf=None):
     """
-        Order crossing points into a track along the route
-        Args:
-            df (DataFrame): Route info in dataframe format
-            track_points (dict): Dictionary of crossing points and cell ids
-
-        Returns:
-            user_track (DataFrame): DataFrame of ordered crossing points and cell ids
+    Order crossing points into a track along the route, including all waypoints.
+    Args:
+        df (DataFrame): Route info in dataframe format
+        track_points (DataFrame): DataFrame of crossing points and cell ids
+        mesh_gdf (GeoDataFrame, optional): Mesh GeoDataFrame to assign CellID for waypoints
+    Returns:
+        user_track (DataFrame): DataFrame of ordered points (waypoints and crossings) and cell ids
     """
+    from shapely.geometry import Point, LineString
 
-    start_point = Point(df.iloc[0]['Long'], df.iloc[0]['Lat'])
-    end_point = Point(df.iloc[-1]['Long'], df.iloc[-1]['Lat'])
-
-    pathing = True
-    track_id = np.where(track_points['startPoints'] == start_point)[0][0]
     path_point = []
     cell_ids = []
+    used_crossings = set()
 
-    # Loop through crossing points to order them into a track along the route
-    while pathing:
-        start_point_segment = track_points['startPoints'].iloc[track_id]
-        end_point_segment = track_points['endPoints'].iloc[track_id]
-        path_point.append(start_point_segment)
-        cell_ids.append(track_points['cellID'].iloc[track_id])
+    # If mesh_gdf not provided, try to find it in globals
+    if mesh_gdf is None:
+        mesh_gdf = globals().get('mesh_gdf', None)
 
-        if len(track_points['midPoints'].iloc[track_id]) != 0:
-            for midpnt in track_points['midPoints'].iloc[track_id]:
-                path_point.append(midpnt)
-                cell_ids.append(track_points['cellID'].iloc[track_id])
+    # Helper to find containing cell for a point
+    def find_cell_id(pt, tol=1e-9):
+        """Find the mesh cell index containing or nearest to point `pt`.
 
-        if  distance(end_point_segment,end_point) < 0.05:
-            path_point.append(end_point_segment)
-            cell_ids.append(track_points['cellID'].iloc[track_id])
-            pathing = False
-        else:
-            track_id     = np.argmin([distance(entry,end_point_segment) for entry in track_points['startPoints']])
-            track_misfit = min([distance(entry,end_point_segment) for entry in track_points['startPoints']])
-            if track_misfit >= 0.05:
-                raise Exception(f'Path Segment not adding - ID={track_id},Misfit={track_misfit},distance from'
-                                f' end={distance(end_point_segment,end_point)}')
+        Uses spatial index / intersects/covers first, then falls back to nearest-cell
+        within a small tolerance (degrees). Returns the mesh index label or None.
+        """
+        if mesh_gdf is None:
+            return None
+
+        # Try spatial index to reduce candidates if available
+        try:
+            sidx = mesh_gdf.sindex
+            candidate_idx = list(sidx.intersection(pt.bounds))
+            candidates = mesh_gdf.iloc[candidate_idx]
+        except Exception:
+            candidates = mesh_gdf
+
+        # Check intersection/covers/contains among candidates
+        for midx, mrow in candidates.iterrows():
+            try:
+                if mrow['geometry'].covers(pt) or mrow['geometry'].intersects(pt) or mrow['geometry'].contains(pt):
+                    return midx
+            except Exception:
+                continue
+
+        # Fallback: choose nearest polygon if within tolerance
+        try:
+            dists = mesh_gdf.geometry.distance(pt)
+            min_idx = dists.idxmin()
+            if dists.loc[min_idx] <= tol:
+                return min_idx
+        except Exception:
+            pass
+
+        return None
+
+    # Add the first waypoint
+    first_pt = Point(df.iloc[0]['Long'], df.iloc[0]['Lat'])
+    path_point.append(first_pt)
+    cell_ids.append(find_cell_id(first_pt))
+
+    # Iterate over each segment between consecutive waypoints
+    for i in range(len(df) - 1):
+        seg_start = Point(df.iloc[i]['Long'], df.iloc[i]['Lat'])
+        seg_end = Point(df.iloc[i+1]['Long'], df.iloc[i+1]['Lat'])
+        seg_line = LineString([seg_start, seg_end])
+
+        # Collect crossings that fall on this segment by checking individual points
+        # Use a slightly relaxed tolerance for numerical robustness
+        tol = 1e-6
+        points_on_seg = []  # list of (proj_distance, t_idx, point, cellID)
+        for t_idx, row in track_points.iterrows():
+            if t_idx in used_crossings:
+                continue
+            pts = [row['startPoints']] + list(row['midPoints']) + [row['endPoints']]
+            for p in pts:
+                try:
+                    if p.distance(seg_line) <= tol:
+                        points_on_seg.append((seg_line.project(p), t_idx, p, row['cellID']))
+                except Exception:
+                    continue
+
+        # sort all crossing points along the segment and append in that order
+        points_on_seg.sort(key=lambda x: x[0])
+        seen_rows = set()
+        for _, t_idx, p, cid in points_on_seg:
+            path_point.append(p)
+            cell_ids.append(cid)
+            if t_idx not in seen_rows:
+                used_crossings.add(t_idx)
+                seen_rows.add(t_idx)
+
+        # finally add the segment end waypoint
+        path_point.append(seg_end)
+        cell_ids.append(find_cell_id(seg_end))
 
     user_track = pd.DataFrame({'Point': path_point, 'CellID': cell_ids})
     return user_track
@@ -336,12 +389,55 @@ def route_calc(df, from_wp, to_wp, mesh, route_type):
     track_points = find_intersections(df, mesh_gdf)
 
     # Loop through crossing points to order them into a track along the route
-    user_track = order_track(df, track_points)
+    # Pass mesh_gdf so waypoint cell lookup uses the current mesh (was previously using globals())
+    user_track = order_track(df, track_points, mesh_gdf)
+
+    # Fill any missing CellID values by searching the mesh (covers/intersects) or nearest cell
+    missing = user_track['CellID'].isna()
+    if missing.any():
+        logging.debug(f"Found {missing.sum()} waypoint CellID(s) missing; attempting to assign from mesh.")
+        for idx in user_track[missing].index:
+            pt = user_track.at[idx, 'Point']
+            cid = None
+            # Try spatial index first
+            try:
+                sidx = mesh_gdf.sindex
+                candidate_idx = list(sidx.intersection(pt.bounds))
+                candidates = mesh_gdf.iloc[candidate_idx]
+            except Exception:
+                candidates = mesh_gdf
+
+            for midx, mrow in candidates.iterrows():
+                try:
+                    if mrow['geometry'].covers(pt) or mrow['geometry'].intersects(pt) or mrow['geometry'].contains(pt):
+                        cid = midx
+                        break
+                except Exception:
+                    continue
+
+            if cid is None:
+                # nearest fallback
+                try:
+                    dists = mesh_gdf.geometry.distance(pt)
+                    min_idx = dists.idxmin()
+                    if dists.loc[min_idx] <= 1e-3:
+                        cid = min_idx
+                except Exception:
+                    cid = None
+
+            user_track.at[idx, 'CellID'] = cid
+
+    # If any CellIDs remain missing, warn and raise an informative error
+    if user_track['CellID'].isna().any():
+        missing_count = user_track['CellID'].isna().sum()
+        logging.error(f"{missing_count} waypoint(s) could not be assigned a CellID. Aborting route calculation.")
+        raise ValueError("Some waypoints are not located in any mesh cell; check mesh coverage and waypoint coordinates.")
     logging.debug(f"Route has {len(user_track)} crossing points")
 
     # Initialise segment costs with zero values at start point of path
     traveltimes = [0.0]
     distances = [0.0]
+    print(user_track)
     cellboxes = [mesh_gdf.iloc[user_track['CellID'].iloc[0]]]
     cases = [1]
 
