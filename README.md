@@ -39,7 +39,7 @@ pip install --group test
 ## Required Data sources
 PolarRoute has been built to work with a variety of open-source atmospheric and oceanographic data sources. For testing and demonstration purposes it is also possible to generate artificial Gaussian Random Field data.  
 
-A full list of supported data sources and their associated dataloaders is given in the  'Dataloader Overview' section of the [MeshiPhi manual](https://bas-amop.github.io/MeshiPhi/)
+A full list of supported data sources and their associated dataloaders is given in the  'Dataloader Overview' section of the [MeshiPhi manual](https://bas-amop.github.io/MeshiPhi/dataloaders/overview/)
 
 ## Developers
 Samuel Hall, Harrison Abbot, Ayat Fekry, George Coombs, David Wyld, Thomas Zwagerman, Jonathan Smith, Maria Fox, and James Byrne
