@@ -66,8 +66,8 @@ docs = [
     "mkdocs-include-markdown-plugin",
     "mkdocstrings[python]",
     "mkdocs-material",
+]
 test = [
     "pytest",
     "pytest-xdist",
-]
 ]
