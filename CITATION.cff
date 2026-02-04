@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+title: "PolarRoute: Long-distance route planner for polar maritime navigation"
+authors:
+  - family-names: Smith
+    given-names: Jonathan D.
+  - family-names: Hall
+    given-names: Samuel
+  - family-names: Coombs
+    given-names: George
+  - family-names: Byrne
+    given-names: James
+  - family-names: Fekry
+    given-names: Ayat
+  - family-names: Wyld
+    given-names: David
+  - family-names: Zwagerman
+    given-names: Thomas
+  - family-names: Fox
+    given-names: Maria
+version: "1.1.9"
+doi: 10.48550/arXiv.2209.02389
+url: https://github.com/antarctica/PolarRoute
+repository-code: https://github.com/antarctica/PolarRoute
+date-released: 2022-09-06
+license: MIT
+message: "If you use this software, please cite our arXiv paper."
+citation: "Jonathan D. Smith, Samuel Hall, George Coombs, James Byrne, Michael A. S. Thorne,  J. Alexander Brearley, Derek Long, Michael Meredith, Maria Fox,  (2022), Autonomous Passage Planning for a Polar Vessel, arXiv, https://arxiv.org/abs/2209.02389"

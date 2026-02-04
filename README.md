@@ -2,18 +2,22 @@
 
 ![](./docs/assets/logo.jpg)
 
-<a href="https://antarctica.github.io/PolarRoute/"><img src="https://img.shields.io/badge/Manual%20-github.io%2FPolarRoute%2F-red" alt="Manual Page">
-<a href="https://colab.research.google.com/drive/12D-CN10X7xAcXn_df0zNLHtdiiXxZVkz?usp=sharing"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" alt="Colab">
-<a href="https://pypi.org/project/polar-route/"><img src="https://img.shields.io/pypi/v/polar-route" alt="PyPI">
-<a href="https://github.com/bas-amop/PolarRoute/tags"><img src="https://img.shields.io/github/v/tag/bas-amop/PolarRoute" alt="Release Tag"></a>
-<a href="https://github.com/bas-amop/PolarRoute/issues"><img src="https://img.shields.io/github/issues/bas-amop/PolarRoute" alt="Issues"></a>
-<a href="https://github.com/bas-amop/PolarRoute/blob/main/LICENSE"><img src="https://img.shields.io/github/license/bas-amop/PolarRoute" alt="License"></a>
+![Dev Status](https://img.shields.io/badge/Status-Active-green)
+[![Documentation](https://img.shields.io/badge/Manual%20-github.io%2FPolarRoute%2F-red)](https://bas-amop.github.io/PolarRoute/)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/polarroute)
+[![PyPi](https://img.shields.io/pypi/v/polarroute)](https://pypi.org/project/polarroute/)
+[![Release Tag](https://img.shields.io/github/v/tag/bas-amop/PolarRoute)](https://github.com/bas-amop/polarroute/tags)
+[![Issues](https://img.shields.io/github/issues/bas-amop/PolarRoute)](https://github.com/bas-amop/PolarRoute/issues)
+[![License](https://img.shields.io/github/license/bas-amop/MeshPolarRouteiPhi)](https://github.com/bas-amop/PolarRoute/blob/main/LICENSE)
+[![Test Status](https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml/badge.svg)](https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/badge/coverage-report-blue)](https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml)
+[![Ruff](https://img.shields.io/badge/code%20style-ruff-0C3A5C?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
 
 PolarRoute is a long-distance maritime polar route planning package, able to take into account complex and changing environmental conditions. It allows the construction of optimised routes through three main stages: discrete modelling of the environmental conditions using a non-uniform mesh, the construction of mesh-optimal paths, and physics informed path smoothing. In order to account for different vehicle properties we construct a series of data-driven functions that can be applied to the environmental mesh to determine the speed limitations and fuel requirements for a given vessel and mesh cell. The environmental modelling component of this functionality is provided by the [MeshiPhi](https://github.com/bas-amop/MeshiPhi) library.
 
 ## Installation
 
-PolarRoute is available from [PyPI](https://pypi.org/project/polar-route/) and the latest version can be installed by running: 
+PolarRoute is available from [PyPI](https://pypi.org/project/polar-route/) and the latest version can be installed by running:
 
 ```
 pip install polar-route
@@ -79,7 +83,7 @@ routes_json = rp.to_json()
 For more details, see the [CLI documentation](https://bas-amop.github.io/PolarRoute/cli/), [examples](https://bas-amop.github.io/PolarRoute/examples/), and the [examples/](examples/) directory.
 
 ## Required Data sources
-PolarRoute has been built to work with a variety of open-source atmospheric and oceanographic data sources. For testing and demonstration purposes it is also possible to generate artificial Gaussian Random Field data.  
+PolarRoute has been built to work with a variety of open-source atmospheric and oceanographic data sources. For testing and demonstration purposes it is also possible to generate artificial Gaussian Random Field data.
 
 A full list of supported data sources and their associated dataloaders is given in the  'Dataloader Overview' section of the [MeshiPhi manual](https://bas-amop.github.io/MeshiPhi/dataloaders/overview/)
 
@@ -87,11 +91,11 @@ A full list of supported data sources and their associated dataloaders is given 
 Samuel Hall, Harrison Abbot, Ayat Fekry, George Coombs, David Wyld, Thomas Zwagerman, Jonathan Smith, Maria Fox, and James Byrne
 
 ## License
-This software is licensed under a MIT license, but request users cite our publication: 
+This software is licensed under a MIT license, but request users cite our publication:
 
 Jonathan D. Smith, Samuel Hall, George Coombs, James Byrne, Michael A. S. Thorne,  J. Alexander Brearley, Derek Long, Michael Meredith, Maria Fox (2022) Autonomous Passage Planning for a Polar Vessel. _arXiv_, <https://arxiv.org/abs/2209.02389>
 
-For more information please see the attached ``LICENSE`` file. 
+For more information please see the attached ``LICENSE`` file.
 
 [version]: https://img.shields.io/PolarRoute/v/datadog-metrics.svg?style=flat-square
 [downloads]: https://img.shields.io/PolarRoute/dm/datadog-metrics.svg?style=flat-square
