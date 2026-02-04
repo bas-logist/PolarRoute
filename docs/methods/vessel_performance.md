@@ -1,21 +1,78 @@
 # Methods - Vessel Performance
 
-## Vessel Overview
+## Overview
 
-All of the functionality that relates to the specific vehicle traversing our meshed environment model is contained within the vessel_performance directory.
-This directory contains a `VesselPerformanceModeller` class that initialises one of the vessel classes in `vessels` and uses this to determine which cells
-in a given mesh are inaccessible for that particular vessel and what its performance will be in each of the accessible cells.
+The vessel_performance module provides a model-based architecture for calculating vessel performance characteristics across meshed environmental models. The system uses:
+
+1. **ModelRegistry** - Plugin system for resistance and consumption models
+2. **Generic Vessel Classes** - Ship, Glider, AUV, Aircraft implementations
+3. **VesselPerformanceModeller** - Orchestrates performance calculations
+4. **VesselFactory** - Creates vessel instances from configuration
 
 ![](../assets/figures/Mesh_Fuel_Speed.jpg)
 
 *The sea ice concentration (a), speed (b) and fuel consumption (c) for the SDA across the Weddell Sea.
 The latter two quantities are derived from the former.*
 
-![](../assets/figures/VesselUML.png)
+## Architecture
 
-*The vessel performance subsystem*
+```
+┌─────────────────────────────────────────────────────────┐
+│           VesselPerformanceModeller                     │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ Coordinates performance & accessibility modeling  │  │
+│  └───────────────────────────────────────────────────┘  │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+                       │ uses
+                       ↓
+┌─────────────────────────────────────────────────────────┐
+│                  VesselFactory                          │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ Creates vessel instances from configuration       │  │
+│  └───────────────────────────────────────────────────┘  │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+                       │ instantiates
+                       ↓
+┌─────────────────────────────────────────────────────────┐
+│            AbstractVessel (base class)                  │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ • model_performance()  • model_accessibility()    │  │
+│  └───────────────────────────────────────────────────┘  │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+         ┌─────────────┼─────────────┬─────────────┐
+         │             │             │             │
+         ↓             ↓             ↓             ↓
+    ┌────────┐   ┌────────┐   ┌────────┐   ┌────────┐
+    │  Ship  │   │ Glider │   │  AUV   │   │Aircraft│
+    └────────┘   └────────┘   └────────┘   └────────┘
+         │             │             │             │
+         │ composes    │ composes    │ composes    │ composes
+         ↓             ↓             ↓             ↓
+┌─────────────────────────────────────────────────────────┐
+│                   ModelRegistry                         │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ • ResistanceModel   • ConsumptionModel            │  │
+│  │ • @register_model decorator                       │  │
+│  └───────────────────────────────────────────────────┘  │
+└──────────────────────┬──────────────────────────────────┘
+                       │
+         ┌─────────────┴─────────────┐
+         │                           │
+         ↓                           ↓
+┌──────────────────┐        ┌──────────────────┐
+│ ResistanceModels │        │ConsumptionModels │
+│ • ice_froude     │        │ • polynomial_fuel│
+│ • wind_drag      │        │ • poly_battery   │
+│ • wave_kreitner  │        │ • constant       │
+└──────────────────┘        └──────────────────┘
+```
 
-## Vessel Performance Modeller
+## Component Documentation
+
+### Vessel Performance Modeller
 
 ::: polar_route.vessel_performance.vessel_performance_modeller.VesselPerformanceModeller
    options:
@@ -25,14 +82,16 @@ The latter two quantities are derived from the former.*
       - model_accessibility
       - to_json
 
-## Vessel Factory
+### Vessel Factory
 
 ::: polar_route.vessel_performance.vessel_factory.VesselFactory
    options:
       members:
       - get_vessel
 
-## Abstract Vessel
+### Abstract Vessel
+
+Base class for all vessel types defining the core interface.
 
 ::: polar_route.vessel_performance.abstract_vessel.AbstractVessel
    options:
@@ -41,46 +100,115 @@ The latter two quantities are derived from the former.*
       - model_performance
       - model_accessibility
 
-## Abstract Ship
+### Generic Vessel Classes
 
-::: polar_route.vessel_performance.vessels.abstract_ship.AbstractShip
+Generic implementations using model composition.
+
+#### Ship
+
+::: polar_route.vessel_performance.vessels.Ship
    options:
       merge_init_into_class: true
       members:
       - model_performance
       - model_accessibility
-      - land
-      - extreme_ice
 
-## SDA
+#### Glider
 
-::: polar_route.vessel_performance.vessels.SDA.SDA
+::: polar_route.vessel_performance.vessels.Glider
    options:
       merge_init_into_class: true
       members:
-      - model_speed
-      - model_fuel
-      - model_resistance
+      - model_performance
+      - model_accessibility
+
+#### AUV
+
+::: polar_route.vessel_performance.vessels.AUV
+   options:
+      merge_init_into_class: true
+      members:
+      - model_performance
+      - model_accessibility
+
+#### Aircraft
+
+::: polar_route.vessel_performance.vessels.Aircraft
+   options:
+      merge_init_into_class: true
+      members:
+      - model_performance
+      - model_accessibility
+
+### Model Registry
+
+Plugin system for registering and creating performance models.
+
+::: polar_route.vessel_performance.models.ModelRegistry
+   options:
+      members:
+      - create
+      - get_registered_models
+
+### Resistance Models
+
+Base class and implementations for calculating forces opposing motion.
+
+::: polar_route.vessel_performance.models.ResistanceModel
+   options:
+      members:
+      - calculate_resistance
       - invert_resistance
 
-## Abstract Glider
-
-::: polar_route.vessel_performance.vessels.abstract_glider.AbstractGlider
+::: polar_route.vessel_performance.models.resistance.FroudeIceResistance
    options:
       merge_init_into_class: true
       members:
-      - model_performance
-      - model_accessibility
-      - land
-      - shallow
-      - extreme_ice
+      - calculate_resistance
+      - invert_resistance
 
-## Slocum Glider
-
-::: polar_route.vessel_performance.vessels.slocum.SlocumGlider
+::: polar_route.vessel_performance.models.resistance.WindDragResistance
    options:
       merge_init_into_class: true
       members:
-      - model_speed
-      - model_battery
+      - calculate_resistance
+
+::: polar_route.vessel_performance.models.resistance.KreitnerWaveResistance
+   options:
+      merge_init_into_class: true
+      members:
+      - calculate_resistance
+
+### Consumption Models
+
+Base class and implementations for calculating fuel/battery usage.
+
+::: polar_route.vessel_performance.models.ConsumptionModel
+   options:
+      members:
+      - calculate_consumption
+
+::: polar_route.vessel_performance.models.consumption.PolynomialFuelModel
+   options:
+      merge_init_into_class: true
+      members:
+      - calculate_consumption
+
+::: polar_route.vessel_performance.models.consumption.PolynomialBatteryModel
+   options:
+      merge_init_into_class: true
+      members:
+      - calculate_consumption
+
+::: polar_route.vessel_performance.models.consumption.ConstantConsumptionModel
+   options:
+      merge_init_into_class: true
+      members:
+      - calculate_consumption
+
+## See Also
+
+- [Vessel Performance Configuration](../config/vessel_performance.md) - Configuration reference
+- [Resistance Models Theory](resistance_models.md) - Mathematical foundations
+- [Vessel Gallery](../config/vessel_gallery.md) - Example configurations
 

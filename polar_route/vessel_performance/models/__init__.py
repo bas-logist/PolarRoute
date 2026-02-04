@@ -156,3 +156,11 @@ class ModelRegistry:
 # Import model implementations to trigger registration
 # (models must be imported after registry infrastructure is defined)
 from polar_route.vessel_performance.models import resistance, consumption
+
+# Expose key classes for documentation and imports
+__all__ = [
+    'ResistanceModel',
+    'ConsumptionModel',
+    'ModelRegistry',
+    'register_model',
+]
