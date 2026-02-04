@@ -1,21 +1,22 @@
 import numpy as np
 import logging
-
-# Module logger
-logger = logging.getLogger(__name__)
-
 from meshiphi.mesh_generation.environment_mesh import EnvironmentMesh
 from meshiphi.mesh_generation.direction import Direction
 from polar_route.vessel_performance.vessel_factory import VesselFactory
 from polar_route.config_validation.config_validator import validate_vessel_config
 from polar_route.utils import timed_call
 
+# Module logger
+logger = logging.getLogger(__name__)
+
+
 class VesselPerformanceModeller:
     """
-        Class for modelling the vessel performance.
-        Takes both an environmental mesh and vessel config as input in json format and modifies the input mesh to
-        include vessel specifics.
+    Class for modelling the vessel performance.
+    Takes both an environmental mesh and vessel config as input in json format and modifies the input mesh to
+    include vessel specifics.
     """
+
     def __init__(self, env_mesh_json, vessel_config, custom_vessel=None):
         """
 
@@ -31,8 +32,8 @@ class VesselPerformanceModeller:
         self.config = vessel_config
 
         # Only switch off neighbour splitting if specified in config
-        if 'neighbour_splitting' not in self.config:
-            self.config['neighbour_splitting'] = True
+        if "neighbour_splitting" not in self.config:
+            self.config["neighbour_splitting"] = True
 
         if custom_vessel is not None:
             logger.info(f"Loading custom vessel class: {type(custom_vessel).__name__}")
@@ -53,9 +54,11 @@ class VesselPerformanceModeller:
         for i, cellbox in enumerate(self.env_mesh.agg_cellboxes):
             access_values = self.vessel.model_accessibility(cellbox)
             self.env_mesh.update_cellbox(i, access_values)
-        inaccessible_nodes = [c.id for c in self.env_mesh.agg_cellboxes if c.agg_data['inaccessible']]
+        inaccessible_nodes = [
+            c.id for c in self.env_mesh.agg_cellboxes if c.agg_data["inaccessible"]
+        ]
         logger.info(f"Found {len(inaccessible_nodes)} inaccessible cells in the mesh")
-        if self.config['neighbour_splitting']:
+        if self.config["neighbour_splitting"]:
             # Split any cells that neighbour inaccessible cells to match their size
             self.split_neighbouring_cells(inaccessible_nodes)
         # Remove inaccessible cells from graph
@@ -71,29 +74,37 @@ class VesselPerformanceModeller:
 
         """
         for i, cellbox in enumerate(self.env_mesh.agg_cellboxes):
-            if cellbox.agg_data.get('inaccessible'):
+            if cellbox.agg_data.get("inaccessible"):
                 continue
             performance_values = self.vessel.model_performance(cellbox)
             self.env_mesh.update_cellbox(i, performance_values)
 
     def to_json(self):
         """
-            Method to return the modified mesh in json format.
+        Method to return the modified mesh in json format.
 
-            Returns:
-                j_mesh (dict): a dictionary representation of the modified mesh.
+        Returns:
+            j_mesh (dict): a dictionary representation of the modified mesh.
         """
         j_mesh = self.env_mesh.to_json()
-        j_mesh['config']['vessel_info'] = self.config
+        j_mesh["config"]["vessel_info"] = self.config
         return j_mesh
 
     def filter_nans(self):
         """
-            Method to check for NaNs in the input cell boxes and zero them if present
+        Method to check for NaNs in the input cell boxes and zero them if present
         """
         for i, cellbox in enumerate(self.env_mesh.agg_cellboxes):
-            if any(np.isnan(val) for val in cellbox.agg_data.values() if type(val) == float):
-                filtered_data = {k: 0. if np.isnan(v) else v for k, v in cellbox.agg_data.items() if type(v) == float}
+            if any(
+                np.isnan(val)
+                for val in cellbox.agg_data.values()
+                if isinstance(val, float)
+            ):
+                filtered_data = {
+                    k: 0.0 if np.isnan(v) else v
+                    for k, v in cellbox.agg_data.items()
+                    if isinstance(v, float)
+                }
                 self.env_mesh.update_cellbox(i, filtered_data)
 
     @timed_call
@@ -111,10 +122,13 @@ class VesselPerformanceModeller:
             neighbour_nodes = self.get_all_neighbours(in_node)
             neighbours = [self.env_mesh.get_cellbox(nn) for nn in neighbour_nodes]
             # Only interested in splitting accessible neighbours
-            acc_neighbours = [n for n in neighbours if not n.agg_data['inaccessible']]
+            acc_neighbours = [n for n in neighbours if not n.agg_data["inaccessible"]]
             # Split neighbouring cells until size matches the inaccessible cell
-            while any(neighbour.boundary.get_width() > in_cb.boundary.get_width() or
-                      neighbour.boundary.get_height() > in_cb.boundary.get_height() for neighbour in acc_neighbours):
+            while any(
+                neighbour.boundary.get_width() > in_cb.boundary.get_width()
+                or neighbour.boundary.get_height() > in_cb.boundary.get_height()
+                for neighbour in acc_neighbours
+            ):
                 # Split all larger neighbours
                 for neighbour in acc_neighbours:
                     if neighbour.boundary.get_width() > in_cb.boundary.get_width():
@@ -122,7 +136,9 @@ class VesselPerformanceModeller:
                 # Extract new neighbours after splitting
                 neighbour_nodes = self.get_all_neighbours(in_node)
                 neighbours = [self.env_mesh.get_cellbox(nn) for nn in neighbour_nodes]
-                acc_neighbours = [n for n in neighbours if not n.agg_data['inaccessible']]
+                acc_neighbours = [
+                    n for n in neighbours if not n.agg_data["inaccessible"]
+                ]
 
     def get_all_neighbours(self, cell_id):
         """
@@ -136,6 +152,8 @@ class VesselPerformanceModeller:
         neighbours = []
         direction_obj = Direction()
         for direction in direction_obj.__dict__.values():
-            neighbours.extend(self.env_mesh.neighbour_graph.get_neighbours(cell_id, str(direction)))
+            neighbours.extend(
+                self.env_mesh.neighbour_graph.get_neighbours(cell_id, str(direction))
+            )
 
         return neighbours

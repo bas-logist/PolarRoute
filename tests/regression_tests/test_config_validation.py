@@ -22,8 +22,12 @@ def load_example(path, loader_func):
     return loader_func(path)
 
 
-load_json_example = lambda path: load_example(path, lambda p: json.load(open(p)))
-load_csv_example = lambda path: load_example(path, pd.read_csv)
+def load_json_example(path):
+    return load_example(path, lambda p: json.load(open(p)))
+
+
+def load_csv_example(path):
+    return load_example(path, pd.read_csv)
 
 
 @pytest.fixture
@@ -46,11 +50,11 @@ def valid_route_config():
 @pytest.fixture
 def valid_waypoints_df():
     """Fixture providing a minimal valid waypoints DataFrame."""
-    return pd.read_csv(StringIO(
-        "Name,Lat,Long,Source,Destination\n"
-        "WP1,60.0,-45.0,X,\n"
-        "WP2,61.0,-44.0,,X"
-    ))
+    return pd.read_csv(
+        StringIO(
+            "Name,Lat,Long,Source,Destination\nWP1,60.0,-45.0,X,\nWP2,61.0,-44.0,,X"
+        )
+    )
 
 
 # Vessel config validation
@@ -155,10 +159,22 @@ def test_validate_waypoints_file():
     "csv_content, match",
     [
         ("Index,Name,Lat,Source\n0,WP1,60.0,X", "Expected the following columns"),
-        ("Index,Name,Lat,Long,Source,Destination\n0,WP1,60.0,-45.0,,X", "No source waypoint defined!"),
-        ("Index,Name,Lat,Long,Source,Destination\n0,WP1,60.0,-45.0,X,", "No destination waypoint defined!"),
-        ("Index,Name,Lat,Long,Source,Destination\n0,WP1,sixty,-45.0,X,\n1,WP2,61.0,not_a_number,,X", 'Non-numeric value in "Lat" column'),
-        ("Name,Lat,Long,Source,Destination", "No source waypoint defined!"),  # Empty with columns
+        (
+            "Index,Name,Lat,Long,Source,Destination\n0,WP1,60.0,-45.0,,X",
+            "No source waypoint defined!",
+        ),
+        (
+            "Index,Name,Lat,Long,Source,Destination\n0,WP1,60.0,-45.0,X,",
+            "No destination waypoint defined!",
+        ),
+        (
+            "Index,Name,Lat,Long,Source,Destination\n0,WP1,sixty,-45.0,X,\n1,WP2,61.0,not_a_number,,X",
+            'Non-numeric value in "Lat" column',
+        ),
+        (
+            "Name,Lat,Long,Source,Destination",
+            "No source waypoint defined!",
+        ),  # Empty with columns
     ],
 )
 def test_validate_waypoints_invalid(csv_content, match):
