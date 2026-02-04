@@ -1,35 +1,34 @@
-.. _outputs:
+# Outputs - Data Types
 
-********************
-Outputs - Data Types
-********************
-
-#########################
-The Vessel_mesh.json file
-#########################
+## The Vessel_mesh.json file
 
 The vessel performance mesh is an extension to an environmental mesh created by the 
+<<<<<<< HEAD:docs/source/sections/Outputs.rst
 `MeshiPhi <https://github.com/bas-amop/MeshiPhi>`_ library.
+=======
+[**MeshiPhi**](https://github.com/antarctica/MeshiPhi) library.
+
+>>>>>>> main:docs/output.md
 Once a discrete mesh environment is created, it is then passed to the vessel performance modeller
 which applies transformations which are specific to a given vehicle. These vehicle specific values 
 are then encoded into the mesh json object and passed downstream to the route planner.
 
-::
+```py
+import json
+from polar_route.vessel_performance.vessel_performance_modeller import VesselPerformanceModeller
 
-    import json
-    from polar_route.vessel_performance.vessel_performance_modeller import VesselPerformanceModeller
+with open('vessel_config.json', 'r') as f:
+    vessel_config = json.load(f)
 
-    with open('vessel_config.json', 'r') as f:
-        vessel_config = json.load(f)
+vpm = VesselPerformanceModeller(mesh_json, vessel_config)
 
-    vpm = VesselPerformanceModeller(mesh_json, vessel_config)
+vpm.model_accessibility()
+vpm.model_performance()
 
-    vpm.model_accessibility()
-    vpm.model_performance()
+vessel_mesh_json = vpm.to_json()
+```
 
-    vessel_mesh_json = vpm.to_json()
-
-.. note::
+!!! note
     To make use of the full range of vessel performance transformations, a Mesh should be constructed with
     the following attributes:
 
@@ -39,7 +38,11 @@ are then encoded into the mesh json object and passed downstream to the route pl
     * density (available via dataloaders: *density*)
     * u10, v10 (available via dataloaders: *era5_wind*)
 
+<<<<<<< HEAD:docs/source/sections/Outputs.rst
     see section **Dataloader Overview** in the `MeshiPhi docs <https://bas-amop.github.io/MeshiPhi/>`_ for more information on dataloaders
+=======
+    see section Dataloaders in the [MeshiPhi docs](https://bas-amop.github.io/MeshiPhi/dataloaders/overview/) for more information on dataloaders
+>>>>>>> main:docs/output.md
 
     The vessel performance modeller will still run without these attributes but will assign default values from the
     configuration file where any data is missing.
@@ -48,53 +51,48 @@ are then encoded into the mesh json object and passed downstream to the route pl
 As an example, after running the vessel performance modeller with the SDA class and all relevant data each cellbox will
 have a set of new attributes as follows:
 
-* **speed** *(list)* : The speed of the vessel in that cell when travelling to each of its neighbours.
-* **fuel** *(list)* : The rate of fuel consumption in that cell when travelling to each of its neighbours.
-* **inaccessible** *(boolean)* : Whether the cell is considered inaccessible to the vessel for any reason.
-* **land** *(boolean)* : Whether the cell is shallow enough to be considered land by the vessel.
-* **ext_ice** *(boolean)* : Whether the cell has enough ice to be inaccessible to the vessel.
-* **resistance** *(list)* : The total resistance force the vessel will encounter in that cell when travelling to each of its neighbours.
-* **ice resistance** *(float)* : The resistance force due to ice.
-* **wind resistance** *(list)* : The resistance force due to wind.
-* **relative wind speed** *(list)* : The apparent wind speed acting on the vessel.
-* **relative wind angle** *(list)* : The angle of the apparent wind acting on the vessel.
+* `speed` *(list)* : The speed of the vessel in that cell when travelling to each of its neighbours.
+* `fuel` *(list)* : The rate of fuel consumption in that cell when travelling to each of its neighbours.
+* `inaccessible` *(boolean)* : Whether the cell is considered inaccessible to the vessel for any reason.
+* `land` *(boolean)* : Whether the cell is shallow enough to be considered land by the vessel.
+* `ext_ice` *(boolean)* : Whether the cell has enough ice to be inaccessible to the vessel.
+* `resistance` *(list)* : The total resistance force the vessel will encounter in that cell when travelling to each of its neighbours.
+* `ice resistance` *(float)* : The resistance force due to ice.
+* `wind resistance` *(list)* : The resistance force due to wind.
+* `relative wind speed` *(list)* : The apparent wind speed acting on the vessel.
+* `relative wind angle` *(list)* : The angle of the apparent wind acting on the vessel.
 
+## The Route.json file
 
-###################
-The Route.json file
-###################
-
-During the route planning stage of the pipline information on the routes and the waypoints used are saved 
+During the route planning stage of the pipeline information on the routes and the waypoints used are saved 
 as outputs to the processing stage. Descriptions of the structure of the two outputs are given below:
 
-=========
-waypoints
-=========
+### waypoints
 
 An entry in the json including all the information about the waypoints defined by the user in the `waypoints.csv`
 file. It may be the case that not all waypoints would have been used in the route construction, but all waypoints
 that are defined can be found in this entry. The structure of the entry is as follows:
 
-:: 
-
-    {\n
-        "Name":{\n
-            '0':"Falklands",\n
-            '1':"Rothera",\n
-            ...\n
-        },\n
-        "Lat":{\n
-            '0':-52.6347222222,
-            '1':-75.26722,\n
-            ...\n
-        },\n
-        "Long":{\n
-            ...\n
-        },\n
-        "index":{\n
-            ...\n
-        }\n
+```json
+{
+    "Name":{
+        '0':"Falklands",
+        '1':"Rothera",
+        ...
+    },
+    "Lat":{
+        '0':-52.6347222222,
+        '1':-75.26722,
+        ...
+    },
+    "Long":{
+        ...
+    },
+    "index":{
+        ...
     }
+}
+```
 
 where each of the values represent the following: 
 
@@ -112,50 +110,47 @@ where each of the values represent the following:
     * **1**  : The cellbox index of waypoint for index row '1' etc
 * **<...>** : Any additional column names defined in the original .csv that was loaded
 
-This output can be converted to a pandas dataframe by running::
-waypoints_dataframe = pd.DataFrame(waypoints) 
+This output can be converted to a pandas dataframe by running: `waypoints_dataframe = pd.DataFrame(waypoints) `
 
 
-=====
-paths
-=====
+### paths
+
 An entry in the json, in geojson format, including all the routes constructed between the user defined waypoints. The structure of this entry is as follows:
 
-:: 
+```json
+{
+    'types':'FeatureCollection',
+    "features":{[
+        'type':'feature',
+        'geometry':{
+            'type': 'LineString',
 
-    {\n
-        'types':'FeatureCollection',\n
-        "features":{[\n
-            'type':'feature',\n
-            'geometry':{\n
-                'type': 'LineString',
+            'coordinates': [[-27.21694, -75.26722],
+                            [-27.5, -75.07960297382266],
+                            [-27.619238882768894, -75.0],
+                            ...]
+        },
+        'properties':{
+            'from': 'Halley',
+            'to': 'Rothera',
+            'traveltime': [0.0,
+                            0.03531938671648596,
+                            0.050310986633880575,
+                            ...],
+            'fuel': [0.0,
+                        0.9648858923588642,
+                        1.3745886107069096,
+                        ...],
+            'times': ['2017-01-01 00:00:00',
+                        '2017-01-01 00:50:51.595036800',
+                        '2017-01-01 01:12:26.869276800',
+                        ...]
+        }
+    ]}
+}
+```
 
-                'coordinates': [[-27.21694, -75.26722],\n
-                                [-27.5, -75.07960297382266],\n
-                                [-27.619238882768894, -75.0],\n
-                                ...]\n
-            },
-            'properties':{\n
-                'from': 'Halley',\n
-                'to': 'Rothera',\n
-                'traveltime': [0.0,\n
-                               0.03531938671648596,\n
-                               0.050310986633880575,\n
-                               ...],\n
-                'fuel': [0.0,\n
-                         0.9648858923588642,\n
-                         1.3745886107069096,\n
-                         ...],\n
-                'times': ['2017-01-01 00:00:00',
-                          '2017-01-01 00:50:51.595036800',
-                          '2017-01-01 01:12:26.869276800',
-                          ...]\n
-            }\n
-        ]}\n
-    }\n
-
-
-where the output takes a GeoJSON standard form (more info at https://geojson.org) given by:
+where the output takes a GeoJSON standard form (more info at <https://geojson.org>) given by:
 
 
 * **<features>** : A list of the features representing each of the separate routes constructed
@@ -167,5 +162,3 @@ where the output takes a GeoJSON standard form (more info at https://geojson.org
         * **traveltime** : A list of float values representing the cumulative travel time along the route. This entry was originally defined as an output in the configuration file by the `path_variables` definition.
         * **fuel** : A list of float values representing the cumulative fuel along the route. This entry was originally defined as an output in the configuration file by the `path_variables` definition.
         * **times** : A list of strings representing UTC Datetimes of the route points, given that the route started from `start_time` given in the configuration file.
-
-

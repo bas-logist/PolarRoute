@@ -58,4 +58,12 @@ log_cli = true
 log_format = "[%(asctime)s] %(levelname)s : %(message)s"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+    
+[dependency-groups]
+docs = [
+    "mkdocs",
+    "mkdocs-autoapi",
+    "mkdocs-include-markdown-plugin",
+    "mkdocstrings[python]",
+    "mkdocs-material",
 ]
