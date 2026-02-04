@@ -47,15 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `hull_type` (slender/blunt distinction now encoded in k/b/n coefficients)
   - Top-level `beam`, `force_limit` (now in resistance model params)
 
-### Migration
-
-Quick migration:
-1. Change `vessel_type: "SDA"` → `vessel_class: "ship"`
-2. Remove `hull_type` field
-3. Add `resistance_models` array with model configurations
-4. Add `consumption_model` object with model configuration
-5. Reference example configs in `examples/vessel_config/` or vessel gallery
-
 ## [1.1.9] - YYYY-MM-DD
 
 ### Added

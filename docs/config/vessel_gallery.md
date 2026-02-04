@@ -220,7 +220,7 @@ Fixed-wing aircraft with constant consumption.
 
 ### Long-Endurance UAV
 
-Unmanned aerial vehicle optimized for extended missions.
+Unmanned aerial vehicle optimised for extended missions.
 
 ```json
 {

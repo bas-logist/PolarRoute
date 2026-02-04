@@ -53,7 +53,7 @@ class VesselFactory:
             AbstractVessel: Initialized vessel instance with configured models
             
         Raises:
-            ValueError: If vessel_class is not recognized
+            ValueError: If vessel_class is not recognised
         """
         vessel_class = config.get('vessel_class')
         

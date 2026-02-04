@@ -133,7 +133,7 @@ Loading mesh and vessel from *json* files:
 with open('/path/to/grf_example.mesh.json', 'r') as f:
     mesh = json.load(f)  
 
-# Loading vessel configuration parameters from file (v2.0 format)
+# Loading vessel configuration parameters from file
 with open('/path/to/SDA.config.json', 'r') as f:
     vessel = json.load(f) 
 ```
@@ -147,7 +147,7 @@ vessel and encode this information into the digital environment.
 
 ```py
 from polar_route.vessel_performance.vessel_performance_modeller import VesselPerformanceModeller
-vp = VesselPerformance(mesh, vessel)
+vp = VesselPerformanceModeller(mesh, vessel)
 vp.model_accessibility() # Method to determine any inaccessible areas, e.g. land
 vp.model_performance() # Method to determine the performance of the vessel in accessible regions, e.g speed or fuel consumption
 ```

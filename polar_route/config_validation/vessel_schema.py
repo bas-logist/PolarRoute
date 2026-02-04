@@ -244,7 +244,7 @@ vessel_schema = {
         },
         "speed_adjustment": {
             "type": "object",
-            "description": "Optional wind-based speed adjustment thresholds (for SDA_wind-style behavior)",
+            "description": "Optional wind-based speed adjustment thresholds (for SDA_wind-style behaviour)",
             "properties": {
                 "wind_threshold_low": {
                     "type": "number",

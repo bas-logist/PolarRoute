@@ -172,7 +172,7 @@ $$ C_B = \frac{V_{displaced}}{length \times beam \times draft} $$
 
 ### Speed Regimes
 
-Wave resistance exhibits different behavior in different speed regimes:
+Wave resistance exhibits different behaviour in different speed regimes:
 - **Low speed** ($\text{Fr}_L < 0.3$): Negligible
 - **Moderate speed** ($0.3 < \text{Fr}_L < 0.5$): Significant and increasing
 - **High speed** ($\text{Fr}_L > 0.5$): Dominant resistance component

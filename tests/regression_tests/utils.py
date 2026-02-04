@@ -66,7 +66,7 @@ def get_mesh_test_files() -> Tuple[List[str], List[str]]:
 # Route and Mesh Calculation Functions
 def calculate_dijkstra_route(config: Dict, mesh: Dict) -> Dict:
     """
-    Calculate optimized route using Dijkstra algorithm.
+    Calculate optimised route using Dijkstra algorithm.
 
     Args:
         config: Route configuration dictionary
