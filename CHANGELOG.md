@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enable running of tests in parallel using pytest-xdist (#260).
 - Add usage section to README.md (#321).
 - Add CHANGELOG.md, CONTRIBUTING.md, CITATION.cff, Makefile.
+- Linting with ruff.
+- Pre-commit hooks which checks linting, along with other formatting issues.
+- GitHub Actions test.yml.
 
 ### Changed
 - Account for SIC values being None, rather than absent in various vessel performance models (#245).
