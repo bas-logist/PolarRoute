@@ -3,6 +3,7 @@
 ![](./docs/assets/logo.jpg)
 
 ![Dev Status](https://img.shields.io/badge/Status-Active-green)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/12D-CN10X7xAcXn_df0zNLHtdiiXxZVkz?usp=sharing)
 [![Documentation](https://img.shields.io/badge/Manual%20-github.io%2FPolarRoute%2F-red)](https://bas-amop.github.io/PolarRoute/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/polarroute)
 [![PyPi](https://img.shields.io/pypi/v/polarroute)](https://pypi.org/project/polarroute/)
@@ -12,6 +13,7 @@
 [![Test Status](https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml/badge.svg)](https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml)
 [![Coverage](https://img.shields.io/badge/coverage-report-blue)](https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml)
 [![Ruff](https://img.shields.io/badge/code%20style-ruff-0C3A5C?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
+
 
 PolarRoute is a long-distance maritime polar route planning package, able to take into account complex and changing environmental conditions. It allows the construction of optimised routes through three main stages: discrete modelling of the environmental conditions using a non-uniform mesh, the construction of mesh-optimal paths, and physics informed path smoothing. In order to account for different vehicle properties we construct a series of data-driven functions that can be applied to the environmental mesh to determine the speed limitations and fuel requirements for a given vessel and mesh cell. The environmental modelling component of this functionality is provided by the [MeshiPhi](https://github.com/bas-amop/MeshiPhi) library.
 
