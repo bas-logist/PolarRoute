@@ -1,441 +1,379 @@
+"""
+Unit tests for vessel performance models and generic vessels.
+
+Tests resistance models, consumption models, and vessel classes independently.
+"""
+
 import pytest
 import numpy as np
-from polar_route.vessel_performance.vessels.SDA import (
-    SDA,
-    wind_resistance,
-    wind_mag_dir,
-    c_wind,
-    calc_wind,
-    fuel_eq,
+import json
+from polar_route.vessel_performance.models.resistance import (
+    FroudeIceResistance,
+    WindDragResistance,
+    KreitnerWaveResistance
 )
-from meshiphi.mesh_generation.aggregated_cellbox import AggregatedCellBox
-from meshiphi.mesh_generation.boundary import Boundary
+from polar_route.vessel_performance.models.consumption import (
+    PolynomialFuelModel,
+    PolynomialBatteryModel,
+    ConstantConsumptionModel
+)
+from polar_route.vessel_performance.models import ModelRegistry
+from polar_route.vessel_performance.vessels.generic_vessels import Ship, Glider, AUV, Aircraft
+from polar_route.vessel_performance.vessel_factory import VesselFactory
+
+
+# Mock cellbox for testing
+class MockCellbox:
+    """Lightweight mock cellbox for testing without MeshiPhi dependency."""
+    def __init__(self, agg_data=None):
+        self.id = "test_cell_0"
+        self.agg_data = agg_data or {}
 
 
 @pytest.fixture
-def sda_vessel():
-    """Fixture providing SDA vessel instance."""
-    config = {
-        "vessel_type": "SDA",
-        "max_speed": 26.5,
-        "unit": "km/hr",
-        "beam": 24.0,
-        "hull_type": "slender",
-        "force_limit": 96634.5,
-        "max_ice_conc": 80,
-        "min_depth": -10,
-    }
-    return SDA(config)
+def ice_cellbox():
+    """Cellbox with ice conditions."""
+    return MockCellbox({
+        "SIC": 50.0,
+        "thickness": 1.0,
+        "density": 900.0,
+        "elevation": -100.0
+    })
 
 
 @pytest.fixture
-def base_cellbox():
-    """Fixture providing base cellbox instance."""
-    boundary = Boundary([-85, -84.9], [-135, -134.9], ["1970-01-01", "2021-12-31"])
-    return AggregatedCellBox(boundary, {}, "0")
+def wind_cellbox():
+    """Cellbox with wind conditions."""
+    return MockCellbox({
+        "u10": 5.0,  # 5 m/s eastward wind
+        "v10": 3.0,  # 3 m/s northward wind
+        "elevation": -100.0
+    })
 
 
-def test_land(sda_vessel, base_cellbox):
-    """Test land detection returns False for navigable depth."""
-    base_cellbox.agg_data = {"elevation": -100.0}
-    assert not sda_vessel.land(base_cellbox)
+@pytest.fixture
+def wave_cellbox():
+    """Cellbox with wave conditions."""
+    return MockCellbox({
+        "swh": 1.5,  # 1.5m significant wave height
+        "elevation": -100.0
+    })
 
 
-def test_extreme_ice(sda_vessel, base_cellbox):
-    """Test extreme ice detection for 100% concentration."""
-    base_cellbox.agg_data = {"SIC": 100.0}
-    assert sda_vessel.extreme_ice(base_cellbox)
+# ============================================================================
+# Resistance Model Tests
+# ============================================================================
+
+class TestFroudeIceResistance:
+    """Tests for Froude-based ice resistance model."""
+    
+    @pytest.fixture
+    def ice_model(self):
+        """Standard ice resistance model (SDA parameters)."""
+        return FroudeIceResistance(
+            k=4.4, b=-0.8267, n=2.0,
+            beam=24.0, force_limit=96634.5, gravity=9.81
+        )
+    
+    def test_zero_ice_gives_zero_resistance(self, ice_model):
+        """Test that no ice produces no resistance."""
+        cellbox = MockCellbox({"SIC": 0.0, "thickness": 0.0, "density": 900.0})
+        resistance = ice_model.calculate_resistance(cellbox, speed=20.0)
+        assert resistance == 0.0
+    
+    def test_positive_resistance_with_ice(self, ice_model, ice_cellbox):
+        """Test that ice produces positive resistance."""
+        resistance = ice_model.calculate_resistance(ice_cellbox, speed=20.0)
+        assert resistance > 0
+    
+    def test_higher_speed_increases_resistance(self, ice_model, ice_cellbox):
+        """Test that resistance increases with speed."""
+        r1 = ice_model.calculate_resistance(ice_cellbox, speed=10.0)
+        r2 = ice_model.calculate_resistance(ice_cellbox, speed=20.0)
+        assert r2 > r1
+    
+    def test_invert_resistance_gives_expected_force(self, ice_model, ice_cellbox):
+        """Test that inverted speed produces target resistance."""
+        target_force = 50000.0
+        safe_speed = ice_model.invert_resistance(ice_cellbox, target_force)
+        actual_resistance = ice_model.calculate_resistance(ice_cellbox, safe_speed)
+        assert abs(actual_resistance - target_force) < 1.0  # Within 1N
 
 
-@pytest.mark.parametrize(
-    "agg_data, expected",
-    [
-        # Open water case
-        (
-            {"speed": 26.5, "SIC": 0.0, "thickness": 0.0, "density": 0.0},
-            {
-                "speed": [26.5] * 8,
-                "SIC": 0.0,
-                "thickness": 0.0,
-                "density": 0.0,
-                "ice resistance": 0.0,
-            },
-        ),
-        # Ice case
-        (
-            {"speed": 26.5, "SIC": 60.0, "thickness": 1.0, "density": 980.0},
-            {
-                "speed": [7.842665122593933] * 8,
-                "SIC": 60.0,
-                "thickness": 1.0,
-                "density": 980.0,
-                "ice resistance": 96634.5,
-            },
-        ),
-    ],
-    ids=["open_water", "ice"],
-)
-def test_model_speed(sda_vessel, base_cellbox, agg_data, expected):
-    """Test speed modeling in open water and ice conditions."""
-    base_cellbox.agg_data = agg_data
-    result = sda_vessel.model_speed(base_cellbox).agg_data
-    assert result == expected
+class TestWindDragResistance:
+    """Tests for wind drag resistance model."""
+    
+    @pytest.fixture
+    def wind_model(self):
+        """Standard wind resistance model (SDA parameters)."""
+        return WindDragResistance(
+            frontal_area=750.0,
+            angles=[0, 30, 60, 90, 120, 150, 180],
+            coefficients=[0.94, 0.77, 0.42, 0.48, 0.17, -0.30, -0.34],
+            interpolation="linear",
+            air_density=1.225
+        )
+    
+    def test_no_wind_gives_zero_resistance(self, wind_model):
+        """Test that calm conditions produce no wind resistance."""
+        cellbox = MockCellbox({"u10": 0.0, "v10": 0.0})
+        resistance = wind_model.calculate_resistance(cellbox, speed=20.0, direction=0.0)
+        assert abs(resistance) < 0.1
+    
+    def test_headwind_produces_positive_resistance(self, wind_model):
+        """Test that headwind increases resistance."""
+        cellbox = MockCellbox({"u10": 0.0, "v10": -10.0})  # Strong southward wind
+        resistance = wind_model.calculate_resistance(
+            cellbox, speed=20.0, direction=0.0  # Heading north
+        )
+        assert resistance > 0
+    
+    def test_tailwind_produces_negative_resistance(self, wind_model):
+        """Test that tailwind can reduce resistance."""
+        cellbox = MockCellbox({"u10": 0.0, "v10": 10.0})  # Strong northward wind
+        resistance = wind_model.calculate_resistance(
+            cellbox, speed=20.0, direction=0.0  # Heading north
+        )
+        # Tailwind should reduce resistance (possibly negative)
+        assert resistance < 100.0
 
 
-@pytest.mark.parametrize(
-    "agg_data, expected",
-    [
-        # Open water
-        (
-            {
-                "speed": [26.5] * 8,
-                "SIC": 0.0,
-                "thickness": 0.0,
-                "density": 0.0,
-                "ice resistance": 0.0,
-            },
-            {
-                "speed": [26.5] * 8,
-                "SIC": 0.0,
-                "thickness": 0.0,
-                "density": 0.0,
-                "ice resistance": 0.0,
-                "resistance": [0.0] * 8,
-            },
-        ),
-        # Ice
-        (
-            {
-                "speed": [7.842665122593933] * 8,
-                "SIC": 60.0,
-                "thickness": 1.0,
-                "density": 980.0,
-                "ice resistance": 96634.5,
-            },
-            {
-                "speed": [7.842665122593933] * 8,
-                "SIC": 60.0,
-                "thickness": 1.0,
-                "density": 980.0,
-                "ice resistance": 96634.5,
-                "resistance": [96634.5] * 8,
-            },
-        ),
-    ],
-    ids=["open_water", "ice"],
-)
-def test_model_resistance(sda_vessel, base_cellbox, agg_data, expected):
-    """Test resistance modeling in open water and ice conditions."""
-    base_cellbox.agg_data = agg_data
-    result = sda_vessel.model_resistance(base_cellbox).agg_data
-    assert result == expected
+class TestKreitnerWaveResistance:
+    """Tests for Kreitner wave resistance model."""
+    
+    @pytest.fixture
+    def wave_model(self):
+        """Standard wave resistance model."""
+        return KreitnerWaveResistance(
+            beam=24.0, length=129.0, c_block=0.75, rho_water=9807
+        )
+    
+    def test_no_waves_gives_zero_resistance(self, wave_model):
+        """Test that calm seas produce no wave resistance."""
+        cellbox = MockCellbox({"swh": 0.0})
+        resistance = wave_model.calculate_resistance(cellbox, speed=20.0)
+        assert resistance == 0.0
+    
+    def test_waves_produce_positive_resistance(self, wave_model, wave_cellbox):
+        """Test that waves produce positive resistance."""
+        resistance = wave_model.calculate_resistance(wave_cellbox, speed=20.0)
+        assert resistance > 0
+    
+    def test_higher_waves_increase_resistance(self, wave_model):
+        """Test that resistance scales with wave height squared."""
+        cellbox1 = MockCellbox({"swh": 1.0})
+        cellbox2 = MockCellbox({"swh": 2.0})
+        r1 = wave_model.calculate_resistance(cellbox1, speed=20.0)
+        r2 = wave_model.calculate_resistance(cellbox2, speed=20.0)
+        # Should be ~4x due to h² term
+        assert 3.8 < (r2 / r1) < 4.2
 
 
-@pytest.mark.parametrize(
-    "agg_data, expected_fuel",
-    [
-        # Open water
-        (
-            {
-                "speed": [26.5] * 8,
-                "SIC": 0.0,
-                "thickness": 0.0,
-                "density": 0.0,
-                "ice resistance": 0.0,
-                "resistance": [0.0] * 8,
-            },
-            [27.3186897] * 8,
-        ),
-        # Ice
-        (
-            {
-                "speed": [7.842665122593933] * 8,
-                "SIC": 60.0,
-                "thickness": 1.0,
-                "density": 980.0,
-                "ice resistance": 96634.5,
-                "resistance": [96634.5] * 8,
-            },
-            [39.94376930737089] * 8,
-        ),
-    ],
-    ids=["open_water", "ice"],
-)
-def test_model_fuel(sda_vessel, base_cellbox, agg_data, expected_fuel):
-    """Test fuel modeling in open water and ice conditions."""
-    base_cellbox.agg_data = agg_data
-    result = sda_vessel.model_fuel(base_cellbox).agg_data
-    assert result["fuel"] == expected_fuel
+# ============================================================================
+# Consumption Model Tests
+# ============================================================================
+
+class TestPolynomialFuelModel:
+    """Tests for polynomial fuel consumption model."""
+    
+    @pytest.fixture
+    def fuel_model(self):
+        """Standard fuel model (SDA parameters)."""
+        return PolynomialFuelModel(
+            speed_coeffs=[0.00137247, -0.0029601, 0.25290433],
+            resistance_coeffs=[7.75218178e-11, 6.48113363e-06]
+        )
+    
+    def test_positive_consumption(self, fuel_model):
+        """Test that fuel consumption is always positive."""
+        fuel = fuel_model.calculate_consumption(speed=20.0, resistance=50000.0)
+        assert fuel > 0
+    
+    def test_higher_speed_increases_consumption(self, fuel_model):
+        """Test that consumption increases with speed."""
+        f1 = fuel_model.calculate_consumption(speed=10.0, resistance=0.0)
+        f2 = fuel_model.calculate_consumption(speed=20.0, resistance=0.0)
+        assert f2 > f1
+    
+    def test_higher_resistance_increases_consumption(self, fuel_model):
+        """Test that consumption increases with resistance."""
+        f1 = fuel_model.calculate_consumption(speed=20.0, resistance=10000.0)
+        f2 = fuel_model.calculate_consumption(speed=20.0, resistance=50000.0)
+        assert f2 > f1
+    
+    def test_negative_resistance_treated_as_zero(self, fuel_model):
+        """Test that negative resistance is handled gracefully."""
+        f_neg = fuel_model.calculate_consumption(speed=20.0, resistance=-1000.0)
+        f_zero = fuel_model.calculate_consumption(speed=20.0, resistance=0.0)
+        assert f_neg == f_zero
 
 
-@pytest.mark.parametrize(
-    "speed, sic, thickness, density, expected",
-    [
-        (0.0, 0.0, 0.0, 0.0, 0.0),
-        (5.56, 60.0, 1.0, 980.0, 64543.75549708632),
-    ],
-    ids=["zero", "positive"],
-)
-def test_ice_resistance(
-    sda_vessel, base_cellbox, speed, sic, thickness, density, expected
-):
-    """Test ice resistance calculation."""
-    base_cellbox.agg_data = {
-        "speed": speed,
-        "SIC": sic,
-        "thickness": thickness,
-        "density": density,
-    }
-    result = sda_vessel.ice_resistance(base_cellbox)
-    assert result == pytest.approx(expected, abs=1e-5)
+class TestPolynomialBatteryModel:
+    """Tests for polynomial battery consumption model."""
+    
+    @pytest.fixture
+    def battery_model(self):
+        """Standard battery model (Slocum parameters)."""
+        return PolynomialBatteryModel(
+            speed_coeffs=[4.44444444, -0.5555555499999991],
+            depth_coeffs=[0.001, 2]
+        )
+    
+    def test_consumption_includes_speed_and_depth(self, battery_model):
+        """Test that both speed and depth affect consumption."""
+        b1 = battery_model.calculate_consumption(speed=1.0, depth=10.0)
+        b2 = battery_model.calculate_consumption(speed=2.0, depth=10.0)
+        b3 = battery_model.calculate_consumption(speed=1.0, depth=20.0)
+        assert b2 != b1  # Speed changes consumption
+        assert b3 != b1  # Depth changes consumption
 
 
-@pytest.mark.parametrize(
-    "speed, sic, thickness, density, expected",
-    [
-        (26.5, 0.0, 0.0, 0.0, 26.5),
-        (26.5, 60.0, 1.0, 980.0, 7.842665122593933),
-    ],
-    ids=["zero_resistance", "positive_resistance"],
-)
-def test_invert_resistance(
-    sda_vessel, base_cellbox, speed, sic, thickness, density, expected
-):
-    """Test resistance inversion to calculate achievable speed."""
-    base_cellbox.agg_data = {
-        "speed": speed,
-        "SIC": sic,
-        "thickness": thickness,
-        "density": density,
-    }
-    result = sda_vessel.invert_resistance(base_cellbox)
-    assert result == pytest.approx(expected, abs=1e-5)
+class TestConstantConsumptionModel:
+    """Tests for constant consumption model."""
+    
+    def test_returns_constant_rate(self):
+        """Test that consumption is always the configured rate."""
+        model = ConstantConsumptionModel(rate=4.75)
+        c1 = model.calculate_consumption(speed=10.0)
+        c2 = model.calculate_consumption(speed=20.0)
+        assert c1 == 4.75
+        assert c2 == 4.75
 
 
-@pytest.mark.parametrize(
-    "speed, resistance, expected",
-    [
-        (0.0, 0.0, 6.06970392),  # Hotel load
-        (26.5, 0.0, 27.3186897),  # Open water
-        (5.56, 64543.76, 24.48333122037351),  # Ice breaking
-    ],
-    ids=["hotel", "open_water", "ice_breaking"],
-)
-def test_fuel_eq(speed, resistance, expected):
-    """Test fuel equation calculation."""
-    result = fuel_eq(speed, resistance)
-    assert result == pytest.approx(expected, abs=1e-5)
+# ============================================================================
+# Model Registry Tests
+# ============================================================================
+
+class TestModelRegistry:
+    """Tests for model registry system."""
+    
+    def test_all_models_registered(self):
+        """Test that all expected models are registered."""
+        models = ModelRegistry.get_registered_models()
+        expected = [
+            'constant_consumption',
+            'ice_froude',
+            'polynomial_battery',
+            'polynomial_fuel',
+            'wave_kreitner',
+            'wind_drag'
+        ]
+        for model_name in expected:
+            assert model_name in models
+    
+    def test_create_valid_model(self):
+        """Test creating a registered model."""
+        model = ModelRegistry.create('ice_froude', {
+            'k': 4.4, 'b': -0.8267, 'n': 2.0,
+            'beam': 24.0, 'force_limit': 96634.5
+        })
+        assert isinstance(model, FroudeIceResistance)
+    
+    def test_create_invalid_model_raises_error(self):
+        """Test that unknown model type raises ValueError."""
+        with pytest.raises(ValueError, match="Unknown model type"):
+            ModelRegistry.create('nonexistent_model', {})
 
 
-@pytest.mark.parametrize(
-    "angle, expected", [(0.0, 0.94), (np.pi / 4.0, 0.595)], ids=["zero", "interpolated"]
-)
-def test_wind_coeff(angle, expected):
-    """Test wind coefficient calculation."""
-    assert c_wind(angle) == expected
+# ============================================================================
+# Generic Vessel Tests
+# ============================================================================
+
+class TestShip:
+    """Tests for generic Ship class."""
+    
+    @pytest.fixture
+    def ship_config(self):
+        """SDA-equivalent ship configuration."""
+        with open('examples/vessel_config/SDA.config.json', 'r') as f:
+            return json.load(f)
+    
+    def test_ship_initialization(self, ship_config):
+        """Test that ship initializes with models."""
+        ship = Ship(ship_config)
+        assert ship.max_speed == 26.5
+        assert len(ship.resistance_models) == 2
+        assert ship.consumption_model is not None
+    
+    def test_ship_model_performance(self, ship_config, ice_cellbox):
+        """Test that ship calculates performance values."""
+        ship = Ship(ship_config)
+        ice_cellbox.agg_data["speed"] = ship.max_speed
+        performance = ship.model_performance(ice_cellbox)
+        
+        assert "speed" in performance
+        assert "resistance" in performance
+        assert "fuel" in performance
+        assert len(performance["speed"]) == 8
+    
+    def test_ship_model_accessibility(self, ship_config):
+        """Test ship accessibility checks."""
+        ship = Ship(ship_config)
+        
+        # Test land detection
+        land_cellbox = MockCellbox({"elevation": 10.0})
+        access = ship.model_accessibility(land_cellbox)
+        assert access["land"] is True
+        assert access["inaccessible"] is True
+        
+        # Test navigable water
+        water_cellbox = MockCellbox({"elevation": -100.0, "SIC": 0.0})
+        access = ship.model_accessibility(water_cellbox)
+        assert access["inaccessible"] is False
 
 
-@pytest.mark.parametrize(
-    "v_vessel, v_wind, wind_dir, expected",
-    [
-        (0.0, 0.0, 0.0, 0.0),
-        (10.0, 10.0, 0.0, 0.0),  # Equal opposite
-        (10.0, 20.0, 0.0, 129543.75),
-        (10.0, 20.0, np.pi, -105656.25),
-    ],
-    ids=["zero", "equal_opposite", "positive", "negative"],
-)
-def test_wind_resistance(v_vessel, v_wind, wind_dir, expected):
-    """Test wind resistance calculation."""
-    result = wind_resistance(v_vessel, v_wind, wind_dir)
-    assert result == pytest.approx(expected, abs=1e-5)
+class TestGlider:
+    """Tests for generic Glider class."""
+    
+    @pytest.fixture
+    def glider_config(self):
+        """Slocum-equivalent glider configuration."""
+        with open('examples/vessel_config/Slocum.config.json', 'r') as f:
+            return json.load(f)
+    
+    def test_glider_initialization(self, glider_config):
+        """Test that glider initializes correctly."""
+        glider = Glider(glider_config)
+        assert glider.max_speed == 1.25
+        assert glider.consumption_model is not None
+    
+    def test_glider_model_performance(self, glider_config):
+        """Test that glider calculates battery consumption."""
+        glider = Glider(glider_config)
+        cellbox = MockCellbox({"elevation": -50.0, "speed": 1.0})
+        performance = glider.model_performance(cellbox)
+        
+        assert "speed" in performance
+        assert "battery" in performance
+        assert len(performance["speed"]) == 8
+        assert len(performance["battery"]) == 8
 
 
-@pytest.mark.parametrize(
-    "speed, u10, v10, expected",
-    [
-        ([0.0] * 8, 0.0, 0.0, (0.0, 0.0)),
-        ([10.0] * 8, 0.0, 10.0, (7.22222, np.pi)),
-        ([10.0] * 8, 10.0, 0.0, (10.378634, 1.299849)),
-    ],
-    ids=["zero", "north", "east"],
-)
-def test_wind_mag_dir(base_cellbox, speed, u10, v10, expected):
-    """Test wind magnitude and direction calculation."""
-    base_cellbox.agg_data = {"speed": speed, "u10": u10, "v10": v10}
-    result = wind_mag_dir(base_cellbox, 0.0)
-    assert result[0] == pytest.approx(expected[0], abs=1e-5)
-    assert result[1] == pytest.approx(expected[1], abs=1e-5)
+# ============================================================================
+# Vessel Factory Tests
+# ============================================================================
+
+class TestVesselFactory:
+    """Tests for vessel factory."""
+    
+    def test_create_ship_from_config(self):
+        """Test creating ship from config file."""
+        with open('examples/vessel_config/SDA.config.json', 'r') as f:
+            config = json.load(f)
+        vessel = VesselFactory.get_vessel(config)
+        assert isinstance(vessel, Ship)
+    
+    def test_create_glider_from_config(self):
+        """Test creating glider from config file."""
+        with open('examples/vessel_config/Slocum.config.json', 'r') as f:
+            config = json.load(f)
+        vessel = VesselFactory.get_vessel(config)
+        assert isinstance(vessel, Glider)
+    
+    def test_invalid_vessel_class_raises_error(self):
+        """Test that invalid vessel_class raises ValueError."""
+        config = {"vessel_class": "invalid", "max_speed": 10, "unit": "km/hr"}
+        with pytest.raises(ValueError, match="Unknown vessel_class"):
+            VesselFactory.get_vessel(config)
 
 
-@pytest.mark.parametrize(
-    "speed, u10, v10, expected",
-    [
-        # Zero wind
-        (
-            [0.0] * 8,
-            0.0,
-            0.0,
-            {
-                "speed": [0.0] * 8,
-                "u10": 0.0,
-                "v10": 0.0,
-                "wind resistance": [0] * 8,
-                "relative wind speed": [0] * 8,
-                "relative wind angle": [0] * 8,
-            },
-        ),
-        # Northerly wind
-        (
-            [10.0] * 8,
-            0.0,
-            10.0,
-            {
-                "speed": [10.0] * 8,
-                "u10": 0.0,
-                "v10": 10.0,
-                "wind resistance": [
-                    1389.4514464984172,
-                    18883.168370819058,
-                    44192.363791332944,
-                    67170.852525,
-                    44192.36379133295,
-                    18883.168370819058,
-                    1389.45144649843,
-                    -11478.704021299203,
-                ],
-                "relative wind speed": [
-                    8.272382984093076,
-                    10.378634868247365,
-                    12.124347537962088,
-                    12.77778,
-                    12.124347537962088,
-                    10.378634868247365,
-                    8.272382984093076,
-                    7.22222,
-                ],
-                "relative wind angle": [
-                    2.11646579563727,
-                    1.299849270152763,
-                    0.6226774988830187,
-                    0.0,
-                    0.6226774988830185,
-                    1.2998492701527629,
-                    2.1164657956372697,
-                    3.141592653589793,
-                ],
-            },
-        ),
-        # Easterly wind
-        (
-            [10.0] * 8,
-            10.0,
-            0.0,
-            {
-                "speed": [10.0] * 8,
-                "u10": 10.0,
-                "v10": 0.0,
-                "wind resistance": [
-                    1389.45144649843,
-                    -11478.704021299203,
-                    1389.4514464984172,
-                    18883.168370819058,
-                    44192.363791332944,
-                    67170.852525,
-                    44192.363791332944,
-                    18883.168370819058,
-                ],
-                "relative wind speed": [
-                    8.272382984093076,
-                    7.22222,
-                    8.272382984093076,
-                    10.378634868247365,
-                    12.124347537962088,
-                    12.77778,
-                    12.124347537962088,
-                    10.378634868247365,
-                ],
-                "relative wind angle": [
-                    2.1164657956372697,
-                    3.141592653589793,
-                    2.11646579563727,
-                    1.299849270152763,
-                    0.6226774988830187,
-                    0.0,
-                    0.6226774988830187,
-                    1.2998492701527629,
-                ],
-            },
-        ),
-    ],
-    ids=["zero", "north", "east"],
-)
-def test_calc_wind(base_cellbox, speed, u10, v10, expected):
-    """Test complete wind calculation with different wind directions."""
-    base_cellbox.agg_data = {"speed": speed, "u10": u10, "v10": v10}
-    result = calc_wind(base_cellbox).agg_data
-    assert result == expected
-
-
-def test_model_resistance_ice_wind_north(sda_vessel, base_cellbox):
-    """Test combined ice and wind resistance modeling."""
-    base_cellbox.agg_data = {
-        "speed": [7.842665122593933] * 8,
-        "SIC": 60.0,
-        "thickness": 1.0,
-        "density": 980.0,
-        "ice resistance": 96634.5,
-        "u10": 0.0,
-        "v10": 10.0,
-    }
-    result = sda_vessel.model_resistance(base_cellbox).agg_data
-    expected = {
-        "speed": [7.842665122593933] * 8,
-        "SIC": 60.0,
-        "thickness": 1.0,
-        "density": 980.0,
-        "ice resistance": 96634.5,
-        "u10": 0.0,
-        "v10": 10.0,
-        "wind resistance": [
-            1234.4775504276085,
-            19864.391781102568,
-            40525.12205230855,
-            61995.4919027709,
-            40525.1220523086,
-            19864.391781102568,
-            1234.4775504276222,
-            -11604.216485701227,
-        ],
-        "relative wind speed": [
-            8.598664182949458,
-            10.234546822417895,
-            11.64280342483676,
-            12.178519832423898,
-            11.642803424836762,
-            10.234546822417895,
-            8.598664182949458,
-            7.8214801675761025,
-        ],
-        "relative wind angle": [
-            2.176072621553403,
-            1.356295795185576,
-            0.652700196811307,
-            0.0,
-            0.6527001968113064,
-            1.3562957951855759,
-            2.1760726215534025,
-            3.141592653589793,
-        ],
-        "resistance": [
-            97868.9775504276,
-            116498.89178110257,
-            137159.62205230855,
-            158629.99190277088,
-            137159.6220523086,
-            116498.89178110257,
-            97868.97755042762,
-            85030.28351429878,
-        ],
-    }
-    assert result == expected

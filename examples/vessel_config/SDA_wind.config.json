@@ -34,6 +34,11 @@
       "speed_coeffs": [0.00137247, -0.0029601, 0.25290433],
       "resistance_coeffs": [7.75218178e-11, 6.48113363e-06]
     }
+  },
+  "speed_adjustment": {
+    "wind_threshold_low": 0.75,
+    "wind_threshold_high": 1.0,
+    "speed_factor_low": 0.25,
+    "tailwind_factor": 10.0
   }
 }
-
