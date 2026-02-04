@@ -36,6 +36,48 @@ pip install --group test
 
 > NOTE: Some features of the PolarRoute package require GDAL to be installed. Please consult the [documentation](https://bas-amop.github.io/PolarRoute) for further guidance.
 
+## Usage
+
+PolarRoute operates by creating an environmental mesh, adding vessel performance characteristics, and optimizing routes between waypoints. Environmental meshes are created using [MeshiPhi](https://github.com/bas-amop/MeshiPhi), which is installed automatically when installing PolarRoute.
+
+### Quick Start (CLI)
+
+```bash
+# Create environmental mesh
+create_mesh examples/environment_config/grf_example.config.json -o mesh.json
+
+# Add vessel performance model
+add_vehicle examples/vessel_config/SDA.config.json mesh.json -o vessel_mesh.json
+
+# Optimize routes
+optimise_routes examples/route_config/traveltime.config.json vessel_mesh.json examples/waypoints_example.csv -o routes.json
+```
+
+### Quick Start (Python API)
+
+```python
+from meshiphi.mesh_generation.mesh_builder import MeshBuilder
+from polar_route.vessel_performance.vessel_performance_modeller import VesselPerformanceModeller
+from polar_route.route_planner.route_planner import RoutePlanner
+
+# Create environmental mesh (using MeshiPhi)
+mesh_builder = MeshBuilder(env_config)
+mesh_json = mesh_builder.build_environmental_mesh().to_json()
+
+# Add vessel performance to mesh
+vpm = VesselPerformanceModeller(mesh_json, vessel_config)
+vpm.model_accessibility()
+vpm.model_performance()
+vessel_mesh_json = vpm.to_json()
+
+# Calculate routes
+rp = RoutePlanner(vessel_mesh_json, route_config)
+rp.compute_routes(waypoints_path)
+routes_json = rp.to_json()
+```
+
+For more details, see the [CLI documentation](https://bas-amop.github.io/PolarRoute/cli/), [examples](https://bas-amop.github.io/PolarRoute/examples/), and the [examples/](examples/) directory.
+
 ## Required Data sources
 PolarRoute has been built to work with a variety of open-source atmospheric and oceanographic data sources. For testing and demonstration purposes it is also possible to generate artificial Gaussian Random Field data.  
 
