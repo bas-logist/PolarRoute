@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.9] - YYYY-MM-DD
+## [1.1.9] - 2026-02-10
 
 ### Added
 - Convert docs from Sphinx to MkDocs (#321).
