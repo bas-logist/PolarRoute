@@ -11,10 +11,13 @@ try:
     from meshiphi.dataloaders.factory import DataLoaderFactory as DataLoaderFactory
     from meshiphi.mesh_generation.boundary import Boundary as Boundary
 
-    from polar_route.vessel_performance.vessel_performance_modeller import VesselPerformanceModeller as VesselPerformanceModeller
-    from polar_route.vessel_performance.vessel_factory import VesselFactory as VesselFactory
+    from polar_route.vessel_performance.vessel_performance_modeller import (
+        VesselPerformanceModeller as VesselPerformanceModeller,
+    )
+    from polar_route.vessel_performance.vessel_factory import (
+        VesselFactory as VesselFactory,
+    )
     from polar_route.route_planner.route_planner import RoutePlanner as RoutePlanner
-    from polar_route.exceptions import WaypointOutOfBoundsError, NoRouteFoundError, InaccessibleWaypointError, RouteSmoothingError, InvalidMeshError
 
 except ModuleNotFoundError as err:
-    print(f'{err}\n Is PolarRoute installed correctly?')
+    print(f"{err}\n Is PolarRoute installed correctly?")

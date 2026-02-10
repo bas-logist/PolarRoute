@@ -60,6 +60,9 @@ markers = [
 ]
 
 [dependency-groups]
+dev = [
+    "pre-commit",
+]
 docs = [
     "mkdocs",
     "mkdocs-autoapi",
