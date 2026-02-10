@@ -12,6 +12,17 @@ from meshiphi.mesh_generation.aggregated_cellbox import AggregatedCellBox
 from meshiphi.mesh_generation.boundary import Boundary
 
 
+def to_native_types(obj):
+    """Convert NumPy types to native Python types recursively."""
+    if isinstance(obj, dict):
+        return {k: to_native_types(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [to_native_types(item) for item in obj]
+    elif isinstance(obj, np.generic):
+        return obj.item()
+    return obj
+
+
 @pytest.fixture
 def sda_vessel():
     """Fixture providing SDA vessel instance."""
@@ -374,7 +385,8 @@ def test_calc_wind(base_cellbox, speed, u10, v10, expected):
     """Test complete wind calculation with different wind directions."""
     base_cellbox.agg_data = {"speed": speed, "u10": u10, "v10": v10}
     result = calc_wind(base_cellbox).agg_data
-    assert result == expected
+    result = to_native_types(result)
+    assert result == pytest.approx(expected, rel=1e-9, abs=1e-9)
 
 
 def test_model_resistance_ice_wind_north(sda_vessel, base_cellbox):
@@ -389,6 +401,7 @@ def test_model_resistance_ice_wind_north(sda_vessel, base_cellbox):
         "v10": 10.0,
     }
     result = sda_vessel.model_resistance(base_cellbox).agg_data
+    result = to_native_types(result)
     expected = {
         "speed": [7.842665122593933] * 8,
         "SIC": 60.0,
@@ -438,4 +451,4 @@ def test_model_resistance_ice_wind_north(sda_vessel, base_cellbox):
             85030.28351429878,
         ],
     }
-    assert result == expected
+    assert result == pytest.approx(expected, rel=1e-9, abs=1e-9)

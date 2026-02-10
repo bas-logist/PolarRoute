@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add CHANGELOG.md, CONTRIBUTING.md, CITATION.cff, Makefile.
 - Linting with ruff.
 - Pre-commit hooks which checks linting, along with other formatting issues.
-- GitHub Actions test.yml.
+- GitHub Actions test.yml with GDAL installation and caching.
 
 ### Changed
 - Account for SIC values being None, rather than absent in various vessel performance models (#245).
@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mark smoothing tests as slow, enable running "not slow" tests (#260).
 - Consolidate add tests to dependency group, remove requirements.txt.
 - Reduce the amount of duplicate filepaths by adding dynamic discovery of relevant files needed for the tests (#260).
+
+### Fixed
+- Fix test failures on Python 3.14 caused by NumPy float64 type comparisons in vessel performance tests.
 
 [Unreleased]: https://github.com/bas-amop/PolarRoute/compare/v1.1.9...HEAD
 [1.1.9]: https://github.com/bas-amop/PolarRoute/releases/tag/v1.1.9
