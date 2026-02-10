@@ -325,6 +325,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quick-start-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start (CLI)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quick-start-python-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start (Python API)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#required-data-sources" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2011,6 +2050,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quick-start-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start (CLI)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quick-start-python-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start (Python API)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#required-data-sources" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2070,15 +2148,20 @@
 
 <h1 id="polarroute">PolarRoute<a class="headerlink" href="#polarroute" title="Permanent link">&para;</a></h1>
 <p><img alt="" src="assets/logo.jpg" /></p>
-<p><a href="https://antarctica.github.io/PolarRoute/"><img src="https://img.shields.io/badge/Manual%20-github.io%2FPolarRoute%2F-red" alt="Manual Page">
-<a href="https://colab.research.google.com/drive/12D-CN10X7xAcXn_df0zNLHtdiiXxZVkz?usp=sharing"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" alt="Colab">
-<a href="https://pypi.org/project/polar-route/"><img src="https://img.shields.io/pypi/v/polar-route" alt="PyPI">
-<a href="https://github.com/bas-amop/PolarRoute/tags"><img src="https://img.shields.io/github/v/tag/bas-amop/PolarRoute" alt="Release Tag"></a>
-<a href="https://github.com/bas-amop/PolarRoute/issues"><img src="https://img.shields.io/github/issues/bas-amop/PolarRoute" alt="Issues"></a>
-<a href="https://github.com/bas-amop/PolarRoute/blob/main/LICENSE"><img src="https://img.shields.io/github/license/bas-amop/PolarRoute" alt="License"></a></p>
+<p><img alt="Dev Status" src="https://img.shields.io/badge/Status-Active-green" />
+<a href="https://colab.research.google.com/drive/12D-CN10X7xAcXn_df0zNLHtdiiXxZVkz?usp=sharing"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
+<a href="https://bas-amop.github.io/PolarRoute/"><img alt="Documentation" src="https://img.shields.io/badge/Manual%20-github.io%2FPolarRoute%2F-red" /></a>
+<img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/polarroute" />
+<a href="https://pypi.org/project/polarroute/"><img alt="PyPi" src="https://img.shields.io/pypi/v/polarroute" /></a>
+<a href="https://github.com/bas-amop/polarroute/tags"><img alt="Release Tag" src="https://img.shields.io/github/v/tag/bas-amop/PolarRoute" /></a>
+<a href="https://github.com/bas-amop/PolarRoute/issues"><img alt="Issues" src="https://img.shields.io/github/issues/bas-amop/PolarRoute" /></a>
+<a href="https://github.com/bas-amop/PolarRoute/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/bas-amop/MeshPolarRouteiPhi" /></a>
+<a href="https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml"><img alt="Test Status" src="https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml/badge.svg" /></a>
+<a href="https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml"><img alt="Coverage" src="https://img.shields.io/badge/coverage-report-blue" /></a>
+<a href="https://github.com/astral-sh/ruff"><img alt="Ruff" src="https://img.shields.io/badge/code%20style-ruff-0C3A5C?logo=ruff&amp;logoColor=white" /></a></p>
 <p>PolarRoute is a long-distance maritime polar route planning package, able to take into account complex and changing environmental conditions. It allows the construction of optimised routes through three main stages: discrete modelling of the environmental conditions using a non-uniform mesh, the construction of mesh-optimal paths, and physics informed path smoothing. In order to account for different vehicle properties we construct a series of data-driven functions that can be applied to the environmental mesh to determine the speed limitations and fuel requirements for a given vessel and mesh cell. The environmental modelling component of this functionality is provided by the <a href="https://github.com/bas-amop/MeshiPhi">MeshiPhi</a> library.</p>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
-<p>PolarRoute is available from <a href="https://pypi.org/project/polar-route/">PyPI</a> and the latest version can be installed by running: </p>
+<p>PolarRoute is available from <a href="https://pypi.org/project/polar-route/">PyPI</a> and the latest version can be installed by running:</p>
 <div class="highlight"><pre><span></span><code>pip install polar-route
 </code></pre></div>
 <p>Alternatively you can install PolarRoute by downloading the source code from GitHub:
@@ -2093,15 +2176,48 @@ pip install -e .
 <blockquote>
 <p>NOTE: Some features of the PolarRoute package require GDAL to be installed. Please consult the <a href="https://bas-amop.github.io/PolarRoute">documentation</a> for further guidance.</p>
 </blockquote>
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<p>PolarRoute operates by creating an environmental mesh, adding vessel performance characteristics, and optimizing routes between waypoints. Environmental meshes are created using <a href="https://github.com/bas-amop/MeshiPhi">MeshiPhi</a>, which is installed automatically when installing PolarRoute.</p>
+<h3 id="quick-start-cli">Quick Start (CLI)<a class="headerlink" href="#quick-start-cli" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Create environmental mesh</span>
+create_mesh<span class="w"> </span>examples/environment_config/grf_example.config.json<span class="w"> </span>-o<span class="w"> </span>mesh.json
+
+<span class="c1"># Add vessel performance model</span>
+add_vehicle<span class="w"> </span>examples/vessel_config/SDA.config.json<span class="w"> </span>mesh.json<span class="w"> </span>-o<span class="w"> </span>vessel_mesh.json
+
+<span class="c1"># Optimize routes</span>
+optimise_routes<span class="w"> </span>examples/route_config/traveltime.config.json<span class="w"> </span>vessel_mesh.json<span class="w"> </span>examples/waypoints_example.csv<span class="w"> </span>-o<span class="w"> </span>routes.json
+</code></pre></div>
+<h3 id="quick-start-python-api">Quick Start (Python API)<a class="headerlink" href="#quick-start-python-api" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">meshiphi.mesh_generation.mesh_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">MeshBuilder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">polar_route.vessel_performance.vessel_performance_modeller</span><span class="w"> </span><span class="kn">import</span> <span class="n">VesselPerformanceModeller</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">polar_route.route_planner.route_planner</span><span class="w"> </span><span class="kn">import</span> <span class="n">RoutePlanner</span>
+
+<span class="c1"># Create environmental mesh (using MeshiPhi)</span>
+<span class="n">mesh_builder</span> <span class="o">=</span> <span class="n">MeshBuilder</span><span class="p">(</span><span class="n">env_config</span><span class="p">)</span>
+<span class="n">mesh_json</span> <span class="o">=</span> <span class="n">mesh_builder</span><span class="o">.</span><span class="n">build_environmental_mesh</span><span class="p">()</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
+
+<span class="c1"># Add vessel performance to mesh</span>
+<span class="n">vpm</span> <span class="o">=</span> <span class="n">VesselPerformanceModeller</span><span class="p">(</span><span class="n">mesh_json</span><span class="p">,</span> <span class="n">vessel_config</span><span class="p">)</span>
+<span class="n">vpm</span><span class="o">.</span><span class="n">model_accessibility</span><span class="p">()</span>
+<span class="n">vpm</span><span class="o">.</span><span class="n">model_performance</span><span class="p">()</span>
+<span class="n">vessel_mesh_json</span> <span class="o">=</span> <span class="n">vpm</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
+
+<span class="c1"># Calculate routes</span>
+<span class="n">rp</span> <span class="o">=</span> <span class="n">RoutePlanner</span><span class="p">(</span><span class="n">vessel_mesh_json</span><span class="p">,</span> <span class="n">route_config</span><span class="p">)</span>
+<span class="n">rp</span><span class="o">.</span><span class="n">compute_routes</span><span class="p">(</span><span class="n">waypoints_path</span><span class="p">)</span>
+<span class="n">routes_json</span> <span class="o">=</span> <span class="n">rp</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
+</code></pre></div>
+<p>For more details, see the <a href="https://bas-amop.github.io/PolarRoute/cli/">CLI documentation</a>, <a href="https://bas-amop.github.io/PolarRoute/examples/">examples</a>, and the <a href="../examples/">examples/</a> directory.</p>
 <h2 id="required-data-sources">Required Data sources<a class="headerlink" href="#required-data-sources" title="Permanent link">&para;</a></h2>
-<p>PolarRoute has been built to work with a variety of open-source atmospheric and oceanographic data sources. For testing and demonstration purposes it is also possible to generate artificial Gaussian Random Field data.  </p>
+<p>PolarRoute has been built to work with a variety of open-source atmospheric and oceanographic data sources. For testing and demonstration purposes it is also possible to generate artificial Gaussian Random Field data.</p>
 <p>A full list of supported data sources and their associated dataloaders is given in the  'Dataloader Overview' section of the <a href="https://bas-amop.github.io/MeshiPhi/dataloaders/overview/">MeshiPhi manual</a></p>
 <h2 id="developers">Developers<a class="headerlink" href="#developers" title="Permanent link">&para;</a></h2>
 <p>Samuel Hall, Harrison Abbot, Ayat Fekry, George Coombs, David Wyld, Thomas Zwagerman, Jonathan Smith, Maria Fox, and James Byrne</p>
 <h2 id="license">License<a class="headerlink" href="#license" title="Permanent link">&para;</a></h2>
-<p>This software is licensed under a MIT license, but request users cite our publication: </p>
+<p>This software is licensed under a MIT license, but request users cite our publication:</p>
 <p>Jonathan D. Smith, Samuel Hall, George Coombs, James Byrne, Michael A. S. Thorne,  J. Alexander Brearley, Derek Long, Michael Meredith, Maria Fox (2022) Autonomous Passage Planning for a Polar Vessel. <em>arXiv</em>, <a href="https://arxiv.org/abs/2209.02389">https://arxiv.org/abs/2209.02389</a></p>
-<p>For more information please see the attached <code>LICENSE</code> file. </p>
+<p>For more information please see the attached <code>LICENSE</code> file.</p>
 
 
 
