@@ -30,7 +30,7 @@ keywords= ["Polar Science",
     "Marine Routing",
     "Marine Science",
     "Marine Operations"]
-dynamic = ["version", "dependencies", "optional-dependencies"]
+dynamic = ["version", "dependencies"]
 
 [tool.setuptools]
 packages = {find = {}}
@@ -38,7 +38,6 @@ packages = {find = {}}
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 version = {attr = "polar_route.__version__"}
-optional-dependencies.test = { file = ["tests/requirements.txt"] }
 
 [project.urls]
 Homepage = "https://www.bas.ac.uk/project/autonomous-marine-operations-planning"
@@ -53,11 +52,25 @@ calculate_route = "polar_route.cli:calculate_route_cli"
 resimulate_vehicle = "polar_route.cli:resimulate_vehicle_cli"
 extract_routes = "polar_route.cli:extract_routes_cli"
 
+[tool.pytest.ini_options]
+log_cli = true
+log_format = "[%(asctime)s] %(levelname)s : %(message)s"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+]
+
 [dependency-groups]
+dev = [
+    "pre-commit",
+]
 docs = [
     "mkdocs",
     "mkdocs-autoapi",
     "mkdocs-include-markdown-plugin",
     "mkdocstrings[python]",
     "mkdocs-material",
+]
+test = [
+    "pytest",
+    "pytest-xdist",
 ]

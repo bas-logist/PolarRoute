@@ -3,6 +3,9 @@ from polar_route.vessel_performance.abstract_vessel import AbstractVessel
 from abc import abstractmethod
 import logging
 
+# Module logger
+logger = logging.getLogger(__name__)
+
 class AbstractShip(AbstractVessel):
     """
         Abstract class to define the methods and attributes common to any vessel that is a ship
@@ -13,7 +16,7 @@ class AbstractShip(AbstractVessel):
                 params (dict): vessel parameters from the vessel config file
         """
         self.vessel_params = params
-        logging.info(f"Initialising a vessel object of type: {self.__class__.__name__}")
+        logger.info(f"Initialising a vessel object of type: {self.__class__.__name__}")
 
         self.max_speed = self.vessel_params['max_speed']
         self.speed_unit = self.vessel_params['unit']
@@ -32,10 +35,10 @@ class AbstractShip(AbstractVessel):
             Returns:
                 performance_values (dict): the value of the modelled performance characteristics for the ship
         """
-        logging.debug(f"Modelling performance in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
+        logger.debug(f"Modelling performance in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
         # Check if the speed is defined in the input cellbox
         if 'speed' not in cellbox.agg_data:
-            logging.debug(f'No speed in cell, assigning default value of {self.max_speed} '
+            logger.debug(f'No speed in cell, assigning default value of {self.max_speed} '
                           f'{self.speed_unit} from config')
             cellbox.agg_data['speed'] = self.max_speed
 
@@ -56,7 +59,7 @@ class AbstractShip(AbstractVessel):
             Returns:
                 access_values (dict): boolean values for the modelled accessibility criteria
         """
-        logging.debug(f"Modelling accessibility in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
+        logger.debug(f"Modelling accessibility in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
         access_values = dict()
 
         # Make land and extreme ice cells inaccessible
@@ -65,7 +68,7 @@ class AbstractShip(AbstractVessel):
 
         # Make cells above wave height threshold inaccessible
         if self.max_wave is not None:
-            logging.debug(f"Excluding areas with wave height above {self.max_wave}m")
+            logger.debug(f"Excluding areas with wave height above {self.max_wave}m")
             access_values['ext_waves'] = self.extreme_waves(cellbox)
 
         # Exclude any other cells specified in config
@@ -74,7 +77,7 @@ class AbstractShip(AbstractVessel):
                 try:
                     access_values[zone] = cellbox.agg_data[zone]
                 except KeyError:
-                    logging.debug(f'{zone} not found in agg cellbox!')
+                    logger.debug(f'{zone} not found in agg cellbox!')
 
         access_values['inaccessible'] = any(access_values.values())
 
@@ -116,7 +119,7 @@ class AbstractShip(AbstractVessel):
                 land (bool): boolean that is True if the cell is inaccessible due to land
         """
         if 'elevation' not in cellbox.agg_data:
-            logging.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is land")
+            logger.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is land")
             land = False
         else:
             land = cellbox.agg_data['elevation'] > self.max_elevation
@@ -132,8 +135,8 @@ class AbstractShip(AbstractVessel):
             Returns:
                 ext_ice (bool): boolean that is True if the cell is inaccessible due to ice
         """
-        if 'SIC' not in cellbox.agg_data:
-            logging.debug(f"No sea ice concentration data in cell {cellbox.id}")
+        if 'SIC' not in cellbox.agg_data or cellbox.agg_data['SIC'] is None:
+            logger.debug(f"No sea ice concentration data in cell {cellbox.id}")
             ext_ice = False
         else:
             ext_ice = cellbox.agg_data['SIC'] > self.max_ice
@@ -149,7 +152,7 @@ class AbstractShip(AbstractVessel):
                 ext_wave (bool): boolean that is True if the cell is inaccessible due to waves
         """
         if 'swh' not in cellbox.agg_data:
-            logging.debug(f"No wave height data in cell {cellbox.id}")
+            logger.debug(f"No wave height data in cell {cellbox.id}")
             ext_wave = False
         else:
             ext_wave = cellbox.agg_data['swh'] > self.max_wave

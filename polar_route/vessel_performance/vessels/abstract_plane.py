@@ -3,6 +3,9 @@ from meshiphi.mesh_generation.aggregated_cellbox import AggregatedCellBox
 from abc import abstractmethod
 import logging
 
+# Module logger
+logger = logging.getLogger(__name__)
+
 
 class AbstractPlane(AbstractVessel):
     """
@@ -14,7 +17,7 @@ class AbstractPlane(AbstractVessel):
                 params (dict): vessel parameters from the vessel config file
         """
         self.vessel_params = params
-        logging.info(f"Initialising a vessel object of type: {self.__class__.__name__}")
+        logger.info(f"Initialising a vessel object of type: {self.__class__.__name__}")
         self.max_speed      = self.vessel_params['max_speed']
         self.speed_unit     = self.vessel_params['unit']
         self.max_elevation  = self.vessel_params['max_elevation']
@@ -28,7 +31,7 @@ class AbstractPlane(AbstractVessel):
             Args:
                     cellbox (AggregatedCellBox): input cell from environmental mesh
         """
-        logging.debug("Modelling performance in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
+        logger.debug("Modelling performance in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
         perf_cellbox = self.model_speed(cellbox)
         perf_cellbox = self.model_fuel(perf_cellbox)
 
@@ -45,7 +48,7 @@ class AbstractPlane(AbstractVessel):
             Returns:
                 access_values (dict): boolean values for the modelled accessibility criteria
         """
-        logging.debug(f"Modelling accessibility in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
+        logger.debug(f"Modelling accessibility in cell {cellbox.id} for a vessel of type: {self.__class__.__name__}")
         access_values = dict()
 
         # Exclude cells due to terrain or other features
@@ -72,7 +75,7 @@ class AbstractPlane(AbstractVessel):
                 land (bool): boolean that is True if the cell is inaccessible due to land
         """
         if 'elevation' not in cellbox.agg_data:
-            logging.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is land")
+            logger.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is land")
             land = False
         else:
             land = cellbox.agg_data['elevation'] >= 0.0
@@ -89,7 +92,7 @@ class AbstractPlane(AbstractVessel):
                 elevation_max (bool): boolean that is True if the elevation in a cell is too high for a plane
         """
         if 'elevation' not in cellbox.agg_data:
-            logging.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is too high")
+            logger.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is too high")
             elevation_max = False
         else:
             elevation_max = cellbox.agg_data['elevation'] > self.max_elevation

@@ -15,19 +15,19 @@ EXAMPLES_DIR = os.path.join("examples")
 WAYPOINTS_COLUMNS = ["Name", "Lat", "Long", "Source", "Destination"]
 
 
-def load_json_example(path):
-    """Load a JSON file or skip the test if it doesn't exist."""
+def load_example(path, loader_func):
+    """Load an example file or skip the test if it doesn't exist."""
     if not os.path.exists(path):
-        pytest.skip(f"Example JSON not found: {path}")
-    with open(path) as f:
-        return json.load(f)
+        pytest.skip(f"Example file not found: {path}")
+    return loader_func(path)
+
+
+def load_json_example(path):
+    return load_example(path, lambda p: json.load(open(p)))
 
 
 def load_csv_example(path):
-    """Load a CSV file or skip the test if it doesn't exist."""
-    if not os.path.exists(path):
-        pytest.skip(f"Example CSV not found: {path}")
-    return pd.read_csv(path)
+    return load_example(path, pd.read_csv)
 
 
 @pytest.fixture
@@ -50,12 +50,11 @@ def valid_route_config():
 @pytest.fixture
 def valid_waypoints_df():
     """Fixture providing a minimal valid waypoints DataFrame."""
-    csv = """
-Name,Lat,Long,Source,Destination
-WP1,60.0,-45.0,X,
-WP2,61.0,-44.0,,X
-"""
-    return pd.read_csv(StringIO(csv))
+    return pd.read_csv(
+        StringIO(
+            "Name,Lat,Long,Source,Destination\nWP1,60.0,-45.0,X,\nWP2,61.0,-44.0,,X"
+        )
+    )
 
 
 # Vessel config validation
@@ -75,6 +74,7 @@ def test_validate_vessel_config_file():
         ({"vessel_type": None, "max_speed": 26.5, "unit": "km/hr"}, "vessel_type"),
         ({"vessel_type": "SDA", "max_speed": None, "unit": "km/hr"}, "max_speed"),
         ({"vessel_type": "SDA", "max_speed": 26.5, "unit": None}, "unit"),
+        ({}, ""),  # Empty dict
     ],
 )
 def test_validate_vessel_config_invalid(config, match):
@@ -94,12 +94,6 @@ def test_validate_vessel_config_extra_keys(valid_vessel_config):
     config = valid_vessel_config.copy()
     config["additional_field"] = "some_value"
     validate_vessel_config(config)
-
-
-def test_validate_vessel_config_empty_dict():
-    """Test that an empty vessel config dictionary raises ValidationError."""
-    with pytest.raises(ValidationError):
-        validate_vessel_config({})
 
 
 # Route config validation testing
@@ -132,6 +126,7 @@ def test_validate_route_config_file():
             },
             "weeks",
         ),
+        ({}, ""),  # Empty dict
     ],
 )
 def test_validate_route_config_invalid(config, match):
@@ -153,12 +148,6 @@ def test_validate_route_config_extra_keys(valid_route_config):
     validate_route_config(config)
 
 
-def test_validate_route_config_empty_dict():
-    """Test that an empty route config dictionary raises ValidationError."""
-    with pytest.raises(ValidationError):
-        validate_route_config({})
-
-
 # Waypoint config validation
 def test_validate_waypoints_file():
     """Test that the example waypoints CSV validates successfully."""
@@ -169,35 +158,23 @@ def test_validate_waypoints_file():
 @pytest.mark.parametrize(
     "csv_content, match",
     [
+        ("Index,Name,Lat,Source\n0,WP1,60.0,X", "Expected the following columns"),
         (
-            """
-Index,Name,Lat,Source
-0,WP1,60.0,X
-""",
-            "Expected the following columns",
-        ),
-        (
-            """
-Index,Name,Lat,Long,Source,Destination
-0,WP1,60.0,-45.0,,X
-""",
+            "Index,Name,Lat,Long,Source,Destination\n0,WP1,60.0,-45.0,,X",
             "No source waypoint defined!",
         ),
         (
-            """
-Index,Name,Lat,Long,Source,Destination
-0,WP1,60.0,-45.0,X,
-""",
+            "Index,Name,Lat,Long,Source,Destination\n0,WP1,60.0,-45.0,X,",
             "No destination waypoint defined!",
         ),
         (
-            """
-Index,Name,Lat,Long,Source,Destination
-0,WP1,sixty,-45.0,X,
-1,WP2,61.0,not_a_number,,X
-""",
+            "Index,Name,Lat,Long,Source,Destination\n0,WP1,sixty,-45.0,X,\n1,WP2,61.0,not_a_number,,X",
             'Non-numeric value in "Lat" column',
         ),
+        (
+            "Name,Lat,Long,Source,Destination",
+            "No source waypoint defined!",
+        ),  # Empty with columns
     ],
 )
 def test_validate_waypoints_invalid(csv_content, match):
@@ -217,29 +194,6 @@ def test_validate_waypoints_empty_df():
     """Test that empty DataFrame raises AssertionError on missing columns."""
     with pytest.raises(AssertionError, match="Expected the following columns"):
         validate_waypoints(pd.DataFrame())
-
-
-def test_validate_waypoints_missing_source_and_destination():
-    """Test that missing both source and destination raises an error."""
-    df = pd.read_csv(
-        StringIO(
-            """
-Name,Lat,Long,Source,Destination
-WP1,60.0,-45.0,,
-"""
-        )
-    )
-    with pytest.raises(AssertionError) as excinfo:
-        validate_waypoints(df)
-    error = str(excinfo.value).lower()
-    assert "source" in error or "destination" in error
-
-
-def test_validate_waypoints_empty_with_columns():
-    """Test that empty DataFrame with correct columns raises error."""
-    df = pd.DataFrame(columns=WAYPOINTS_COLUMNS)
-    with pytest.raises(AssertionError, match="No source waypoint defined!"):
-        validate_waypoints(df)
 
 
 def test_validate_waypoints_extra_columns(valid_waypoints_df):
