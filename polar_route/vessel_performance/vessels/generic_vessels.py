@@ -47,6 +47,7 @@ class Ship(AbstractVessel):
         self.max_ice = params.get("max_ice_conc", 100.0)
         self.min_depth = params.get("min_depth", 0.0)
         self.num_directions = params.get("num_directions", 8)
+        self.max_wave = params.get("max_wave", None)
         
         # Speed adjustment parameters (for wind-based speed reduction)
         self.speed_adjustment = params.get("speed_adjustment", None)
@@ -200,6 +201,8 @@ class Ship(AbstractVessel):
         
         # Store wind resistance separately for speed adjustment
         wind_resistances = [0.0] * self.num_directions
+        relative_wind_speeds = [0.0] * self.num_directions
+        relative_wind_angles = [0.0] * self.num_directions
         
         for i, heading in enumerate(headings):
             speed = base_speed
@@ -207,10 +210,14 @@ class Ship(AbstractVessel):
             # Calculate total resistance at this heading
             resistance = self._calculate_resistance(cellbox, speed, heading)
             
-            # Extract wind resistance component if wind model exists
+            # Extract wind resistance component and wind data if wind model exists
             for model in self.resistance_models:
                 if model.__class__.__name__ == "WindDragResistance":
                     wind_resistances[i] = model.calculate_resistance(
+                        cellbox, speed, heading
+                    )
+                    # Also get apparent wind speed and angle
+                    relative_wind_speeds[i], relative_wind_angles[i] = model._calculate_apparent_wind(
                         cellbox, speed, heading
                     )
             
@@ -241,6 +248,8 @@ class Ship(AbstractVessel):
         # Add wind data if available
         if any(wr != 0 for wr in wind_resistances):
             performance["wind resistance"] = wind_resistances
+            performance["relative wind speed"] = relative_wind_speeds
+            performance["relative wind angle"] = relative_wind_angles
         
         return performance
     
@@ -251,6 +260,7 @@ class Ship(AbstractVessel):
         Returns dict with boolean flags:
             - land: True if elevation >= 0 (above sea level)
             - ext_ice: True if ice concentration > max_ice_conc
+            - ext_waves: True if wave height > max_wave (if configured)
             - inaccessible: True if cell cannot be traversed
         
         Args:
@@ -284,6 +294,16 @@ class Ship(AbstractVessel):
             access["ext_ice"] = True
             access["inaccessible"] = True
             return access
+        
+        # Check wave height if configured
+        if hasattr(self, 'max_wave') and self.max_wave is not None:
+            wave_height = cellbox.agg_data.get("swh", 0.0)
+            if wave_height > self.max_wave:
+                access["ext_waves"] = True
+                access["inaccessible"] = True
+                return access
+            else:
+                access["ext_waves"] = False
         
         return access
 
@@ -344,6 +364,7 @@ class Glider(AbstractVessel):
         access = {
             "land": False,
             "ext_ice": False,
+            "shallow": False,
             "inaccessible": False
         }
         
@@ -355,6 +376,7 @@ class Glider(AbstractVessel):
         
         depth = abs(elevation)
         if depth < self.min_depth:
+            access["shallow"] = True
             access["inaccessible"] = True
             return access
         
@@ -411,6 +433,7 @@ class AUV(AbstractVessel):
         access = {
             "land": False,
             "ext_ice": False,
+            "shallow": False,
             "inaccessible": False
         }
         
@@ -422,6 +445,7 @@ class AUV(AbstractVessel):
         
         depth = abs(elevation)
         if depth < self.min_depth:
+            access["shallow"] = True
             access["inaccessible"] = True
             return access
         
@@ -452,6 +476,7 @@ class Aircraft(AbstractVessel):
         self.max_speed = params["max_speed"]
         self.unit = params["unit"]
         self.num_directions = params.get("num_directions", 8)
+        self.max_altitude = params.get("max_altitude", None)
         
         consumption_spec = params["consumption_model"]
         self.consumption_model = ModelRegistry.create(
@@ -474,9 +499,18 @@ class Aircraft(AbstractVessel):
         }
     
     def model_accessibility(self, cellbox):
-        """Aircraft can access all cells (fly over everything)."""
-        return {
+        """Aircraft can access most cells but check altitude limits."""
+        access = {
             "land": False,
-            "ext_ice": False,
+            "elevation_max": False,
             "inaccessible": False
         }
+        
+        # Check if elevation is too high
+        if self.max_altitude is not None:
+            elevation = cellbox.agg_data.get("elevation", 0.0)
+            if elevation > self.max_altitude:
+                access["elevation_max"] = True
+                access["inaccessible"] = True
+        
+        return access

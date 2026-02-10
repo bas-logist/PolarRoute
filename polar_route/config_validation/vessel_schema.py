@@ -198,6 +198,11 @@ vessel_schema = {
             "minimum": 0,
             "description": "Minimum water depth required [m]"
         },
+        "max_altitude": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Maximum altitude for aircraft [m]"
+        },
         "max_wave": {
             "type": "number",
             "minimum": 0,

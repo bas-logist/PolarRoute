@@ -116,17 +116,17 @@ class TestWindDragResistance:
     
     def test_headwind_gives_positive_resistance(self, wind_model, cellbox_with_wind):
         """Test that headwind creates positive resistance."""
-        # Travel eastward (π/2) into eastward wind
+        # Travel westward (3π/2) into eastward wind (wind from ahead)
         resistance = wind_model.calculate_resistance(
-            cellbox_with_wind, speed=15.0, direction=np.pi/2
+            cellbox_with_wind, speed=15.0, direction=3*np.pi/2
         )
         assert resistance > 0.0
     
     def test_tailwind_gives_negative_resistance(self, wind_model, cellbox_with_wind):
         """Test that tailwind creates negative resistance (boost)."""
-        # Travel westward (3π/2) with eastward wind at back
+        # Travel eastward (π/2) with eastward wind at back (wind from behind)
         resistance = wind_model.calculate_resistance(
-            cellbox_with_wind, speed=15.0, direction=3*np.pi/2
+            cellbox_with_wind, speed=15.0, direction=np.pi/2
         )
         assert resistance < 0.0
 

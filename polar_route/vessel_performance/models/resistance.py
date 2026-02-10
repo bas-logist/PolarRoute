@@ -230,7 +230,9 @@ class WindDragResistance(ResistanceModel):
         # Calculate angle (dot product gives cos of angle between them)
         dot_product = np.dot(vessel_unit, wind_unit)
         dot_product = np.clip(dot_product, -1.0, 1.0)  # Numerical safety
-        relative_angle = np.arccos(-dot_product)  # Negative because we want angle to wind, not from
+        # Use negative to convert from angle between vectors to angle from wind source
+        # Wind vector points where wind goes, but drag depends on where it comes from
+        relative_angle = np.arccos(-dot_product)
         
         return wind_speed, relative_angle
     
