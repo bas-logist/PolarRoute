@@ -9,7 +9,7 @@
 [![PyPi](https://img.shields.io/pypi/v/polarroute)](https://pypi.org/project/polarroute/)
 [![Release Tag](https://img.shields.io/github/v/tag/bas-amop/PolarRoute)](https://github.com/bas-amop/polarroute/tags)
 [![Issues](https://img.shields.io/github/issues/bas-amop/PolarRoute)](https://github.com/bas-amop/PolarRoute/issues)
-[![License](https://img.shields.io/github/license/bas-amop/MeshPolarRouteiPhi)](https://github.com/bas-amop/PolarRoute/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/bas-amop/PolarRoute)](https://github.com/bas-amop/PolarRoute/blob/main/LICENSE)
 [![Test Status](https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml/badge.svg)](https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml)
 [![Coverage](https://img.shields.io/badge/coverage-report-blue)](https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml)
 [![Ruff](https://img.shields.io/badge/code%20style-ruff-0C3A5C?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
