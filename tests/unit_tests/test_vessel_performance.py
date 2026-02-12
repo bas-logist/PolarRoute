@@ -30,6 +30,17 @@ class MockCellbox:
         self.agg_data = agg_data or {}
 
 
+def to_native_types(obj):
+    """Convert NumPy types to native Python types recursively."""
+    if isinstance(obj, dict):
+        return {k: to_native_types(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [to_native_types(item) for item in obj]
+    elif isinstance(obj, np.generic):
+        return obj.item()
+    return obj
+
+
 @pytest.fixture
 def ice_cellbox():
     """Cellbox with ice conditions."""
@@ -377,3 +388,176 @@ class TestVesselFactory:
             VesselFactory.get_vessel(config)
 
 
+@pytest.mark.parametrize(
+    "speed, u10, v10, expected",
+    [
+        # Zero wind
+        (
+            [0.0] * 8,
+            0.0,
+            0.0,
+            {
+                "speed": [0.0] * 8,
+                "u10": 0.0,
+                "v10": 0.0,
+                "wind resistance": [0] * 8,
+                "relative wind speed": [0] * 8,
+                "relative wind angle": [0] * 8,
+            },
+        ),
+        # Northerly wind
+        (
+            [10.0] * 8,
+            0.0,
+            10.0,
+            {
+                "speed": [10.0] * 8,
+                "u10": 0.0,
+                "v10": 10.0,
+                "wind resistance": [
+                    1389.4514464984172,
+                    18883.168370819058,
+                    44192.363791332944,
+                    67170.852525,
+                    44192.36379133295,
+                    18883.168370819058,
+                    1389.45144649843,
+                    -11478.704021299203,
+                ],
+                "relative wind speed": [
+                    8.272382984093076,
+                    10.378634868247365,
+                    12.124347537962088,
+                    12.77778,
+                    12.124347537962088,
+                    10.378634868247365,
+                    8.272382984093076,
+                    7.22222,
+                ],
+                "relative wind angle": [
+                    2.11646579563727,
+                    1.299849270152763,
+                    0.6226774988830187,
+                    0.0,
+                    0.6226774988830185,
+                    1.2998492701527629,
+                    2.1164657956372697,
+                    3.141592653589793,
+                ],
+            },
+        ),
+        # Easterly wind
+        (
+            [10.0] * 8,
+            10.0,
+            0.0,
+            {
+                "speed": [10.0] * 8,
+                "u10": 10.0,
+                "v10": 0.0,
+                "wind resistance": [
+                    1389.45144649843,
+                    -11478.704021299203,
+                    1389.4514464984172,
+                    18883.168370819058,
+                    44192.363791332944,
+                    67170.852525,
+                    44192.363791332944,
+                    18883.168370819058,
+                ],
+                "relative wind speed": [
+                    8.272382984093076,
+                    7.22222,
+                    8.272382984093076,
+                    10.378634868247365,
+                    12.124347537962088,
+                    12.77778,
+                    12.124347537962088,
+                    10.378634868247365,
+                ],
+                "relative wind angle": [
+                    2.1164657956372697,
+                    3.141592653589793,
+                    2.11646579563727,
+                    1.299849270152763,
+                    0.6226774988830187,
+                    0.0,
+                    0.6226774988830187,
+                    1.2998492701527629,
+                ],
+            },
+        ),
+    ],
+    ids=["zero", "north", "east"],
+)
+def test_calc_wind(base_cellbox, speed, u10, v10, expected):
+    """Test complete wind calculation with different wind directions."""
+    base_cellbox.agg_data = {"speed": speed, "u10": u10, "v10": v10}
+    result = calc_wind(base_cellbox).agg_data
+    result = to_native_types(result)
+    assert result == pytest.approx(expected, rel=1e-9, abs=1e-9)
+
+
+def test_model_resistance_ice_wind_north(sda_vessel, base_cellbox):
+    """Test combined ice and wind resistance modeling."""
+    base_cellbox.agg_data = {
+        "speed": [7.842665122593933] * 8,
+        "SIC": 60.0,
+        "thickness": 1.0,
+        "density": 980.0,
+        "ice resistance": 96634.5,
+        "u10": 0.0,
+        "v10": 10.0,
+    }
+    result = sda_vessel.model_resistance(base_cellbox).agg_data
+    result = to_native_types(result)
+    expected = {
+        "speed": [7.842665122593933] * 8,
+        "SIC": 60.0,
+        "thickness": 1.0,
+        "density": 980.0,
+        "ice resistance": 96634.5,
+        "u10": 0.0,
+        "v10": 10.0,
+        "wind resistance": [
+            1234.4775504276085,
+            19864.391781102568,
+            40525.12205230855,
+            61995.4919027709,
+            40525.1220523086,
+            19864.391781102568,
+            1234.4775504276222,
+            -11604.216485701227,
+        ],
+        "relative wind speed": [
+            8.598664182949458,
+            10.234546822417895,
+            11.64280342483676,
+            12.178519832423898,
+            11.642803424836762,
+            10.234546822417895,
+            8.598664182949458,
+            7.8214801675761025,
+        ],
+        "relative wind angle": [
+            2.176072621553403,
+            1.356295795185576,
+            0.652700196811307,
+            0.0,
+            0.6527001968113064,
+            1.3562957951855759,
+            2.1760726215534025,
+            3.141592653589793,
+        ],
+        "resistance": [
+            97868.9775504276,
+            116498.89178110257,
+            137159.62205230855,
+            158629.99190277088,
+            137159.6220523086,
+            116498.89178110257,
+            97868.97755042762,
+            85030.28351429878,
+        ],
+    }
+    assert result == pytest.approx(expected, rel=1e-9, abs=1e-9)
