@@ -86,7 +86,7 @@ class PolynomialBatteryModel(ConsumptionModel):
     Calculates battery consumption using polynomial functions of speed and depth.
     
     Formula:
-        battery = poly_speed(v) + poly_depth(d)
+        battery = poly_speed(v) * poly_depth(d)
     
     Where:
         v = vessel speed
@@ -127,7 +127,7 @@ class PolynomialBatteryModel(ConsumptionModel):
         Returns:
             float: Battery consumption rate [Ah/day or W]
         """
-        battery = self.speed_polynomial(speed) + self.depth_polynomial(depth)
+        battery = self.speed_polynomial(speed) * self.depth_polynomial(depth)
         return battery
 
 

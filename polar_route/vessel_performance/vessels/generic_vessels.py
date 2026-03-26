@@ -48,6 +48,7 @@ class Ship(AbstractVessel):
         self.min_depth = params.get("min_depth", 0.0)
         self.num_directions = params.get("num_directions", 8)
         self.max_wave = params.get("max_wave", None)
+        self.excluded_zones = params.get("excluded_zones", None)
         
         # Speed adjustment parameters (for wind-based speed reduction)
         self.speed_adjustment = params.get("speed_adjustment", None)
@@ -296,14 +297,21 @@ class Ship(AbstractVessel):
             return access
         
         # Check wave height if configured
-        if hasattr(self, 'max_wave') and self.max_wave is not None:
+        if self.max_wave is not None:
             wave_height = cellbox.agg_data.get("swh", 0.0)
             if wave_height > self.max_wave:
                 access["ext_waves"] = True
                 access["inaccessible"] = True
-                return access
             else:
                 access["ext_waves"] = False
+        
+        # Check excluded zones if configured
+        if self.excluded_zones is not None:
+            for zone in self.excluded_zones:
+                if zone in cellbox.agg_data:
+                    access[zone] = cellbox.agg_data[zone]
+                    if access[zone]:
+                        access["inaccessible"] = True
         
         return access
 
@@ -345,12 +353,12 @@ class Glider(AbstractVessel):
         speed = cellbox.agg_data.get("speed", self.max_speed)
         speeds = [speed] * self.num_directions
         
-        # Get depth (negative elevation)
-        depth = abs(cellbox.agg_data.get("elevation", 0.0))
+        # Get elevation (negative value, depth below sea level)
+        elevation = cellbox.agg_data.get("elevation", 0.0)
         
         # Calculate battery consumption
         battery = self.consumption_model.calculate_consumption(
-            speed, depth=depth
+            speed, depth=elevation
         )
         batteries = [battery] * self.num_directions
         
@@ -417,9 +425,9 @@ class AUV(AbstractVessel):
         speed = cellbox.agg_data.get("speed", self.max_speed)
         speeds = [speed] * self.num_directions
         
-        depth = abs(cellbox.agg_data.get("elevation", 0.0))
+        elevation = cellbox.agg_data.get("elevation", 0.0)
         battery = self.consumption_model.calculate_consumption(
-            speed, depth=depth
+            speed, depth=elevation
         )
         batteries = [battery] * self.num_directions
         
