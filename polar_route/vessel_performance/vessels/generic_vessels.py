@@ -259,7 +259,7 @@ class Ship(AbstractVessel):
         Determine if cell is accessible based on ice concentration and water depth.
         
         Returns dict with boolean flags:
-            - land: True if elevation >= 0 (above sea level)
+            - land: True if elevation > -min_depth (above configured max elevation)
             - ext_ice: True if ice concentration > max_ice_conc
             - ext_waves: True if wave height > max_wave (if configured)
             - inaccessible: True if cell cannot be traversed
@@ -270,49 +270,38 @@ class Ship(AbstractVessel):
         Returns:
             dict: Accessibility flags
         """
-        access = {
-            "land": False,
-            "ext_ice": False,
-            "inaccessible": False
-        }
-        
-        # Check if on land (elevation >= 0)
-        elevation = cellbox.agg_data.get("elevation", -100)
-        if elevation >= 0:
-            access["land"] = True
-            access["inaccessible"] = True
-            return access
-        
-        # Check minimum depth requirement
-        depth = abs(elevation)
-        if depth < self.min_depth:
-            access["inaccessible"] = True
-            return access
-        
+        access = {}
+
+        # Check if on land (elevation > -min_depth, matching legacy max_elevation check)
+        if 'elevation' not in cellbox.agg_data:
+            logger.warning(f"No elevation data in cell {cellbox.id}, cannot determine if it is land")
+            access["land"] = False
+        else:
+            access["land"] = cellbox.agg_data['elevation'] > -self.min_depth
+
         # Check ice concentration
-        sic = cellbox.agg_data.get("SIC", 0.0)
-        if sic > self.max_ice:
-            access["ext_ice"] = True
-            access["inaccessible"] = True
-            return access
-        
+        if 'SIC' not in cellbox.agg_data or cellbox.agg_data['SIC'] is None:
+            access["ext_ice"] = False
+        else:
+            access["ext_ice"] = cellbox.agg_data['SIC'] > self.max_ice
+
         # Check wave height if configured
         if self.max_wave is not None:
-            wave_height = cellbox.agg_data.get("swh", 0.0)
-            if wave_height > self.max_wave:
-                access["ext_waves"] = True
-                access["inaccessible"] = True
-            else:
+            if 'swh' not in cellbox.agg_data:
                 access["ext_waves"] = False
-        
+            else:
+                access["ext_waves"] = cellbox.agg_data['swh'] > self.max_wave
+
         # Check excluded zones if configured
         if self.excluded_zones is not None:
             for zone in self.excluded_zones:
-                if zone in cellbox.agg_data:
+                try:
                     access[zone] = cellbox.agg_data[zone]
-                    if access[zone]:
-                        access["inaccessible"] = True
-        
+                except KeyError:
+                    logger.debug(f'{zone} not found in agg cellbox!')
+
+        access["inaccessible"] = any(access.values())
+
         return access
 
 
@@ -355,6 +344,10 @@ class Glider(AbstractVessel):
         
         # Get elevation (negative value, depth below sea level)
         elevation = cellbox.agg_data.get("elevation", 0.0)
+        
+        # Cap depth at max dive depth (yo-yo dive assumption)
+        max_dive_depth = self.vessel_params.get("max_dive_depth", 1000.0)
+        elevation = max(elevation, -max_dive_depth)
         
         # Calculate battery consumption
         battery = self.consumption_model.calculate_consumption(
@@ -508,17 +501,30 @@ class Aircraft(AbstractVessel):
     
     def model_accessibility(self, cellbox):
         """Aircraft can access most cells but check altitude limits."""
-        access = {
-            "land": False,
-            "elevation_max": False,
-            "inaccessible": False
-        }
-        
+        access = {}
+
         # Check if elevation is too high
         if self.max_altitude is not None:
-            elevation = cellbox.agg_data.get("elevation", 0.0)
-            if elevation > self.max_altitude:
-                access["elevation_max"] = True
-                access["inaccessible"] = True
-        
+            if 'elevation' not in cellbox.agg_data:
+                access["elevation_max"] = False
+            else:
+                access["elevation_max"] = cellbox.agg_data['elevation'] > self.max_altitude
+
+        # Check excluded zones if configured
+        excluded_zones = self.vessel_params.get('excluded_zones')
+        if excluded_zones is not None:
+            for zone in excluded_zones:
+                try:
+                    access[zone] = cellbox.agg_data[zone]
+                except KeyError:
+                    logger.debug(f'{zone} not found in agg cellbox!')
+
+        access["inaccessible"] = any(access.values())
+
+        # Land flag is informational only (doesn't affect aircraft accessibility)
+        if 'elevation' not in cellbox.agg_data:
+            access["land"] = False
+        else:
+            access["land"] = cellbox.agg_data['elevation'] >= 0.0
+
         return access
