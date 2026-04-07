@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.10] - 2026-04-07
+
+### Added
+
+### Changed
+
+### Fixed
+
 ## [1.1.9] - 2026-02-10
 
 ### Added
@@ -32,5 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix test failures on Python 3.14 caused by NumPy float64 type comparisons in vessel performance tests.
 
-[Unreleased]: https://github.com/bas-amop/PolarRoute/compare/v1.1.9...HEAD
+[Unreleased]: https://github.com/bas-amop/PolarRoute/compare/v1.1.10...HEAD
+[1.1.10]: https://github.com/bas-amop/PolarRoute/compare/v1.1.9...v1.1.10
 [1.1.9]: https://github.com/bas-amop/PolarRoute/releases/tag/v1.1.9
