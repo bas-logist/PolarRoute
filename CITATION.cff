@@ -17,7 +17,7 @@ authors:
     given-names: Thomas
   - family-names: Fox
     given-names: Maria
-version: "1.1.9"
+version: "1.1.10"
 doi: 10.48550/arXiv.2209.02389
 url: https://github.com/antarctica/PolarRoute
 repository-code: https://github.com/antarctica/PolarRoute

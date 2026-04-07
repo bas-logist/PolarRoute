@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.10] - 2026-04-07
+
+### Added
+
+### Changed
+* Replacing logging calls with module logger by @thomaszwagerman in https://github.com/bas-logist/PolarRoute/pull/334
+* Simplify testing suite by @thomaszwagerman in https://github.com/bas-logist/PolarRoute/pull/333
+* Migrate docs from sphinx to mkdocs material by @davidwyld in https://github.com/bas-logist/PolarRoute/pull/339
+* Docs fixes and give polarroute docs their own colour: light blue by @davidwyld in https://github.com/bas-logist/PolarRoute/pull/341
+* Linting and pre-commit hooks by @thomaszwagerman in https://github.com/bas-logist/PolarRoute/pull/342
+* v1.1.9 by @thomaszwagerman in https://github.com/bas-logist/PolarRoute/pull/332
+
+## New Contributors
+* @davidwyld made their first contribution in https://github.com/bas-logist/PolarRoute/pull/339
+
+
 ## [1.1.9] - 2026-02-10
 
 ### Added
@@ -32,5 +48,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix test failures on Python 3.14 caused by NumPy float64 type comparisons in vessel performance tests.
 
-[Unreleased]: https://github.com/bas-amop/PolarRoute/compare/v1.1.9...HEAD
+[Unreleased]: https://github.com/bas-amop/PolarRoute/compare/v1.1.10...HEAD
+[1.1.10]: https://github.com/bas-amop/PolarRoute/compare/v1.1.9...v1.1.10
 [1.1.9]: https://github.com/bas-amop/PolarRoute/releases/tag/v1.1.9
