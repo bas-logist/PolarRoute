@@ -386,7 +386,11 @@ def test_calc_wind(base_cellbox, speed, u10, v10, expected):
     base_cellbox.agg_data = {"speed": speed, "u10": u10, "v10": v10}
     result = calc_wind(base_cellbox).agg_data
     result = to_native_types(result)
-    assert result == pytest.approx(expected, rel=1e-9, abs=1e-9)
+    
+    # Compare each key separately to avoid pytest.approx issues with nested dicts
+    assert result.keys() == expected.keys()
+    for key in expected:
+        assert result[key] == pytest.approx(expected[key], rel=1e-9, abs=1e-9)
 
 
 def test_model_resistance_ice_wind_north(sda_vessel, base_cellbox):
@@ -451,4 +455,8 @@ def test_model_resistance_ice_wind_north(sda_vessel, base_cellbox):
             85030.28351429878,
         ],
     }
-    assert result == pytest.approx(expected, rel=1e-9, abs=1e-9)
+    
+    # Compare each key separately to avoid pytest.approx issues with nested dicts
+    assert result.keys() == expected.keys()
+    for key in expected:
+        assert result[key] == pytest.approx(expected[key], rel=1e-9, abs=1e-9)
