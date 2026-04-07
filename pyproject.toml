@@ -40,10 +40,10 @@ dependencies = {file = ["requirements.txt"]}
 version = {attr = "polar_route.__version__"}
 
 [project.urls]
-Homepage = "https://www.bas.ac.uk/project/autonomous-marine-operations-planning"
-Documentation = "https://antarctica.github.io/PolarRoute"
-Repository = "https://github.com/antarctica/PolarRoute"
-Issues = "https://github.com/antarctica/PolarRoute/issues"
+Homepage = "https://www.bas.ac.uk/project/logist-ai-for-environmentally-aware-decision-support/"
+Documentation = "https://bas-logist.github.io/PolarRoute/"
+Repository = "https://github.com/bas-logist/PolarRoute"
+Issues = "https://github.com/bas-logist/PolarRoute/issues"
 
 [project.scripts]
 add_vehicle = "polar_route.cli:add_vehicle_cli"
