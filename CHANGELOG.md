@@ -12,8 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+* Replacing logging calls with module logger by @thomaszwagerman in https://github.com/bas-logist/PolarRoute/pull/334
+* Simplify testing suite by @thomaszwagerman in https://github.com/bas-logist/PolarRoute/pull/333
+* Migrate docs from sphinx to mkdocs material by @davidwyld in https://github.com/bas-logist/PolarRoute/pull/339
+* Docs fixes and give polarroute docs their own colour: light blue by @davidwyld in https://github.com/bas-logist/PolarRoute/pull/341
+* Linting and pre-commit hooks by @thomaszwagerman in https://github.com/bas-logist/PolarRoute/pull/342
+* v1.1.9 by @thomaszwagerman in https://github.com/bas-logist/PolarRoute/pull/332
 
-### Fixed
+## New Contributors
+* @davidwyld made their first contribution in https://github.com/bas-logist/PolarRoute/pull/339
+
 
 ## [1.1.9] - 2026-02-10
 
