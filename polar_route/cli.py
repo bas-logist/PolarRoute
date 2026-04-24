@@ -1,5 +1,5 @@
 import argparse
-import json
+import simplejson as json
 import inspect
 import logging
 import fiona
@@ -151,7 +151,7 @@ def resimulate_vehicle_cli():
     # Saving output
     logger.info(f"Saving mesh to {args.output}")
     with open(args.output, "w+") as fp:
-        json.dump(rebuilt_mesh_json, fp, indent=4)
+        json.dump(rebuilt_mesh_json, fp, indent=4, ignore_nan=True)
 
 
 @timed_call
@@ -174,7 +174,7 @@ def add_vehicle_cli():
     info = vp.to_json()
     logger.info(f"Saving vp mesh to {args.output}")
     with open(args.output, "w+") as fp:
-        json.dump(info, fp, indent=4)
+        json.dump(info, fp, indent=4, ignore_nan=True)
 
 
 @timed_call
@@ -227,7 +227,7 @@ def optimise_routes_cli():
 
         logger.info(f"\tOutputting dijkstra path to {dijkstra_output_file}")
         with open(dijkstra_output_file, "w+") as fp:
-            json.dump(info_dijkstra, fp, indent=4)
+            json.dump(info_dijkstra, fp, indent=4, ignore_nan=True)
 
         # Create GeoJSON filename
         if args.path_geojson:
@@ -237,7 +237,7 @@ def optimise_routes_cli():
                 f"\tExtracting standalone dijkstra path GeoJSON to {dijkstra_output_file}"
             )
             with open(dijkstra_output_file, "w+") as fp:
-                json.dump(info_dijkstra["paths"], fp, indent=4)
+                json.dump(info_dijkstra["paths"], fp, indent=4, ignore_nan=True)
 
     logger.info("Calculating smoothed routes")
     smoothed_routes = rp.compute_smoothed_routes()
@@ -247,7 +247,7 @@ def optimise_routes_cli():
 
     logger.info(f"\tOutputting smoothed route(s) to {output_file}")
     with open(output_file, "w+") as fp:
-        json.dump(info, fp, indent=4)
+        json.dump(info, fp, indent=4, ignore_nan=True)
 
     # Optional output of smoothed route to standalone GeoJSON file
     if args.path_geojson:
@@ -256,7 +256,7 @@ def optimise_routes_cli():
         output_file = ".".join(output_file_strs)
         logger.info(f"\tExtracting standalone path GeoJSON to {output_file}")
         with open(output_file, "w+") as fp:
-            json.dump(info["paths"], fp, indent=4)
+            json.dump(info["paths"], fp, indent=4, ignore_nan=True)
 
     # Optional output of smoothed route(s) to standalone KML file(s)
     if args.path_kml:
@@ -345,7 +345,7 @@ def extract_routes_cli():
 
             logger.info(f"Saving route to {route_output_str}")
             with open(route_output_str, "w") as f:
-                json.dump(geojson_output, f, indent=4)
+                json.dump(geojson_output, f, indent=4, ignore_nan=True)
 
     elif output_file_strs[-1] == "gpx":
         logger.info("Extracting routes in gpx format")
@@ -420,4 +420,4 @@ def calculate_route_cli():
 
         logger.info(f"Saving calculated route to {args.output}")
         with open(args.output, "w+") as f:
-            json.dump(calc_route, f, indent=4)
+            json.dump(calc_route, f, indent=4, ignore_nan=True)

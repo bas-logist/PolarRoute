@@ -1,4 +1,5 @@
 meshiphi
+simplejson
 dask
 geopandas
 jsonschema
