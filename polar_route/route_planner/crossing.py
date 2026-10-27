@@ -5,13 +5,12 @@ In the section below we will go through, stage by stage, how the crossing point 
 used within the class.
 """
 
-import numpy as np
+import math
 import logging
 from polar_route.utils import unit_time, unit_speed
 
 # Module logger
 logger = logging.getLogger(__name__)
-np.seterr(divide="ignore", invalid="ignore")
 
 
 def traveltime_in_cell(xdist, ydist, u, v, s, tt_dist=None):
@@ -29,25 +28,29 @@ def traveltime_in_cell(xdist, ydist, u, v, s, tt_dist=None):
         traveltime (float): the travel time within the cell
         dist (float): the distance within the cell
     """
-    dist = np.sqrt(xdist**2 + ydist**2)
-    cval = np.sqrt(u**2 + v**2)
+    dist = math.sqrt(xdist**2 + ydist**2)
+    cval = math.sqrt(u**2 + v**2)
 
     dotprod = xdist * u + ydist * v
     diffsqrs = s**2 - cval**2
 
     if diffsqrs == 0.0:
         if dotprod == 0.0:
-            traveltime = np.inf
+            traveltime = math.inf
         else:
             if ((dist**2) / (2 * dotprod)) < 0:
-                traveltime = np.inf
+                traveltime = math.inf
             else:
                 traveltime = dist**2 / (2 * dotprod)
     else:
-        traveltime = (np.sqrt(dotprod**2 + (dist**2) * diffsqrs) - dotprod) / diffsqrs
+        sqrt_arg = dotprod**2 + (dist**2) * diffsqrs
+        if sqrt_arg < 0:
+            traveltime = math.nan
+        else:
+            traveltime = (math.sqrt(sqrt_arg) - dotprod) / diffsqrs
 
     if traveltime < 0:
-        traveltime = np.inf
+        traveltime = math.inf
 
     if tt_dist:
         return traveltime, dist
@@ -143,19 +146,19 @@ class NewtonianDistance:
         iteration_num = 0
         while improving:
             F, dF, X1, X2, t1, t2 = f(y0, x, a, Y, u1, v1, u2, v2, s1, s2)
-            if F == np.inf:
-                return np.nan, np.inf
+            if F == math.inf:
+                return math.nan, math.inf
             y0 = y0 - (F / dF)
             improving = abs((F / dF) / (X1 * X2)) > self.optimizer_tol
             iteration_num += 1
             # Assume convergence impossible after 1000 iterations and exit
             if iteration_num > 1000:
                 # Set crossing point to nan and travel times to infinity
-                y0 = np.nan
+                y0 = math.nan
                 t1 = -1
                 t2 = -1
 
-        return y0, unit_time(np.array([t1, t2]), self.unit_time)
+        return y0, (unit_time(t1, self.unit_time), unit_time(t2, self.unit_time))
 
     def _F(self, y, x, a, Y, u1, v1, u2, v2, s1, s2):
         """
@@ -190,15 +193,15 @@ class NewtonianDistance:
         if X1ns < 0:
             X1 = -1
         else:
-            X1 = np.sqrt(X1ns)
+            X1 = math.sqrt(X1ns)
         X2ns = D2**2 + C2 * (a**2 + (Y - y) ** 2)
         if X2ns < 0:
             X2 = -1
         else:
-            X2 = np.sqrt(X2ns)
+            X2 = math.sqrt(X2ns)
 
         if X1 < 0 or X2 < 0:
-            return np.inf, np.inf, np.inf, np.inf, np.inf, np.inf
+            return math.inf, math.inf, math.inf, math.inf, math.inf, math.inf
 
         F = X2 * (y - ((v1 * (X1 - D1)) / C1)) + X1 * (y - Y + ((v2 * (X2 - D2)) / C2))
 
@@ -234,7 +237,7 @@ class NewtonianDistance:
         Returns:
             traveltime (float) - Traveltime between the two points within cell in unit_time
         """
-        x = (Cp[0] - Wp[0]) * self.m_long * np.cos(Wp[1] * (np.pi / 180))
+        x = (Cp[0] - Wp[0]) * self.m_long * math.cos(Wp[1] * (math.pi / 180))
         y = (Cp[1] - Wp[1]) * self.m_lat
         Su = self.source_cellbox.agg_data["uC"]
         Sv = self.source_cellbox.agg_data["vC"]
@@ -276,18 +279,18 @@ class NewtonianDistance:
         Ssp = self.source_speed
         Nsp = self.neighbour_speed
 
-        x = s_dcx * self.m_long * np.cos(s_cy * (np.pi / 180))
-        a = n_dcx * self.m_long * np.cos(n_cy * (np.pi / 180))
+        x = s_dcx * self.m_long * math.cos(s_cy * (math.pi / 180))
+        a = n_dcx * self.m_long * math.cos(n_cy * (math.pi / 180))
         Y = ptvl * (n_cy - s_cy) * self.m_lat
 
         # Optimising to determine the y-value of the crossing point
         y, travel_time = self._newton_optimisation(
             self._F, x, a, Y, Su, Sv, Nu, Nv, Ssp, Nsp
         )
-        if np.isnan(y) or travel_time[0] < 0 or travel_time[1] < 0:
-            travel_time = [np.inf, np.inf]
-            cross_points = [np.nan, np.nan]
-            cell_points = [np.nan, np.nan]
+        if math.isnan(y) or travel_time[0] < 0 or travel_time[1] < 0:
+            travel_time = [math.inf, math.inf]
+            cross_points = [math.nan, math.nan]
+            cell_points = [math.nan, math.nan]
             return travel_time, cross_points, cell_points
 
         cross_points = (s_cx + ptvl * s_dcx, s_cy + ptvl * y / self.m_lat)
@@ -299,10 +302,10 @@ class NewtonianDistance:
         smax = s_cy + s_dcy
         emin = n_cy - n_dcy
         emax = n_cy + n_dcy
-        vmin = np.max([smin, emin])
-        vmax = np.min([smax, emax])
+        vmin = max(smin, emin)
+        vmax = min(smax, emax)
         if (cross_points[1] < vmin) or (cross_points[1] > vmax):
-            cross_points = (cross_points[0], np.clip(cross_points[1], vmin, vmax))
+            cross_points = (cross_points[0], min(max(cross_points[1], vmin), vmax))
 
         return travel_time, cross_points, cell_points
 
@@ -346,20 +349,20 @@ class NewtonianDistance:
             ptvl
             * (n_cx - s_cx)
             * self.m_long
-            * np.cos((n_cy + s_cy) * (np.pi / 180) / 2.0)
+            * math.cos((n_cy + s_cy) * (math.pi / 180) / 2.0)
         )
 
         y, travel_time = self._newton_optimisation(
             self._F, x, a, Y, Su, Sv, Nu, Nv, Ssp, Nsp
         )
-        if np.isnan(y) or travel_time[0] < 0 or travel_time[1] < 0:
-            travel_time = [np.inf, np.inf]
-            cross_points = [np.nan, np.nan]
-            cell_points = [np.nan, np.nan]
+        if math.isnan(y) or travel_time[0] < 0 or travel_time[1] < 0:
+            travel_time = [math.inf, math.inf]
+            cross_points = [math.nan, math.nan]
+            cell_points = [math.nan, math.nan]
             return travel_time, cross_points, cell_points
 
         clon = s_cx + ptvl * y / (
-            self.m_long * np.cos((n_cy + s_cy) * (np.pi / 180) / 2.0)
+            self.m_long * math.cos((n_cy + s_cy) * (math.pi / 180) / 2.0)
         )
         clat = s_cy + -1 * ptvl * s_dcy
 
@@ -372,10 +375,10 @@ class NewtonianDistance:
         smax = s_cx + s_dcx
         emin = n_cx - n_dcx
         emax = n_cx + n_dcx
-        vmin = np.max([smin, emin])
-        vmax = np.min([smax, emax])
+        vmin = max(smin, emin)
+        vmax = min(smax, emax)
         if (cross_points[0] < vmin) or (cross_points[0] > vmax):
-            cross_points = (np.clip(cross_points[0], vmin, vmax), cross_points[1])
+            cross_points = (min(max(cross_points[0], vmin), vmax), cross_points[1])
 
         return travel_time, cross_points, cell_points
 
@@ -414,8 +417,8 @@ class NewtonianDistance:
             ptvX = -1.0
             ptvY = 1.0
 
-        dx1 = ptvX * s_dcx * self.m_long * np.cos(s_cy * (np.pi / 180))
-        dx2 = ptvX * n_dcx * self.m_long * np.cos(n_cy * (np.pi / 180))
+        dx1 = ptvX * s_dcx * self.m_long * math.cos(s_cy * (math.pi / 180))
+        dx2 = ptvX * n_dcx * self.m_long * math.cos(n_cy * (math.pi / 180))
         dy1 = ptvY * s_dcy * self.m_lat
         dy2 = ptvY * n_dcy * self.m_lat
 
@@ -436,12 +439,12 @@ class NewtonianDistance:
         # Determining traveltime
         t1 = traveltime_in_cell(dx1, dy1, Su, Sv, Ssp)
         t2 = traveltime_in_cell(dx2, dy2, Nu, Nv, Nsp)
-        travel_time = unit_time(np.array([t1, t2]), self.unit_time)
+        travel_time = (unit_time(t1, self.unit_time), unit_time(t2, self.unit_time))
 
         if travel_time[0] < 0 or travel_time[1] < 0:
-            travel_time = [np.inf, np.inf]
-            cross_points = [np.nan, np.nan]
-            cell_points = [np.nan, np.nan]
+            travel_time = [math.inf, math.inf]
+            cross_points = [math.nan, math.nan]
+            cell_points = [math.nan, math.nan]
             return travel_time, cross_points, cell_points
 
         return travel_time, cross_points, cell_points
@@ -473,9 +476,9 @@ class NewtonianDistance:
                 )
             )
 
-            travel_time = [np.inf, np.inf]
-            cross_points = [np.nan, np.nan]
-            cell_points = [np.nan, np.nan]
+            travel_time = [math.inf, math.inf]
+            cross_points = [math.nan, math.nan]
+            cell_points = [math.nan, math.nan]
 
         logger.debug(f"NewtonianDistance.value >> TravelTime >> {travel_time}")
         return travel_time, cross_points, cell_points, self.case

@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import pyproj
 import logging
@@ -19,19 +20,21 @@ def dist_around_globe(start_point, crossing_point):
     Returns:
         a (float): longitude distance between the two points in degrees
     """
-    a1 = np.sign(crossing_point - start_point) * (
-        np.max([start_point, crossing_point]) - np.min([start_point, crossing_point])
-    )
-    a2 = -(
-        360
-        - (
-            np.max([start_point, crossing_point])
-            - np.min([start_point, crossing_point])
-        )
-    ) * np.sign(crossing_point - start_point)
+    diff = crossing_point - start_point
+    if diff > 0:
+        sign = 1
+    elif diff < 0:
+        sign = -1
+    else:
+        sign = 0
+
+    span = max(start_point, crossing_point) - min(start_point, crossing_point)
+
+    a1 = sign * span
+    a2 = -(360 - span) * sign
 
     dist = [a1, a2]
-    indx = np.argmin(abs(np.array(dist)))
+    indx = 0 if abs(dist[0]) <= abs(dist[1]) else 1
 
     a = dist[indx]
     return a
@@ -54,18 +57,18 @@ def rhumb_line_distance(start_waypoint, end_waypoint):
     x_e, y_e = end_waypoint
 
     r = 6371.1 * 1000.0
-    dy_corrected = np.log(
-        np.tan((np.pi / 4) + (y_e * (np.pi / 180)) / 2)
-        / np.tan((np.pi / 4) + (y_s * (np.pi / 180)) / 2)
+    dy_corrected = math.log(
+        math.tan((math.pi / 4) + (y_e * (math.pi / 180)) / 2)
+        / math.tan((math.pi / 4) + (y_s * (math.pi / 180)) / 2)
     )
-    dx = (x_e - x_s) * (np.pi / 180)
-    dy = (y_e - y_s) * (np.pi / 180)
+    dx = (x_e - x_s) * (math.pi / 180)
+    dy = (y_e - y_s) * (math.pi / 180)
     if dy_corrected == 0 and dy == 0:
-        q = np.cos(y_e * (np.pi / 180))
+        q = math.cos(y_e * (math.pi / 180))
     else:
         q = dy / dy_corrected
 
-    distance = np.sqrt(dy**2 + (q**2) * (dx**2)) * r
+    distance = math.sqrt(dy**2 + (q**2) * (dx**2)) * r
 
     return distance
 
@@ -99,26 +102,26 @@ def rhumb_traveltime_in_cell(cellbox, cp, sp, s, u, v):
     ):
         x = (cp[0] - sp[0]) * 111.386 * 1000.0
         y = (cp[1] - sp[1]) * 111.321 * 1000.0
-        λ = sp[1] * (np.pi / 180)
-        θ = cp[1] * (np.pi / 180)
+        λ = sp[1] * (math.pi / 180)
+        θ = cp[1] * (math.pi / 180)
         C1 = s**2 - u**2 - v**2
-        # z = x * np.cos(θ)
-        r1 = np.cos(λ) / np.cos(θ)
-        d1 = np.sqrt(x**2 + (r1 * y) ** 2)
+        # z = x * math.cos(θ)
+        r1 = math.cos(λ) / math.cos(θ)
+        d1 = math.sqrt(x**2 + (r1 * y) ** 2)
         D1 = x * u + r1 * v * y
     # If horizontal case
     else:
         x = (cp[0] - sp[0]) * 111.386 * 1000.0
         y = (cp[1] - sp[1]) * 111.321 * 1000.0
-        λ = sp[1] * (np.pi / 180)
+        λ = sp[1] * (math.pi / 180)
         θ = y / (2 * 6371 * 1000) + λ
         C1 = s**2 - u**2 - v**2
-        z = x * np.cos(θ)
-        # r1 = np.cos(λ) / np.cos(θ)
+        z = x * math.cos(θ)
+        # r1 = math.cos(λ) / math.cos(θ)
         D1 = z * u + y * v
-        d1 = np.sqrt(z**2 + y**2)
+        d1 = math.sqrt(z**2 + y**2)
 
-    X1 = np.sqrt(D1**2 + C1 * (d1**2))
+    X1 = math.sqrt(D1**2 + C1 * (d1**2))
     tt = (X1 - D1) / C1
     return tt
 
@@ -525,19 +528,19 @@ class Smoothing:
                 ϕ_r = ρ
 
             θ = y / (2 * R) + ϕ_l  # (y/R + λ_s)
-            zl = x * np.cos(θ)
+            zl = x * math.cos(θ)
             ψ = (Y - y) / (2 * R) + ϕ_r  # ((Y-y)/R + φ_r)
-            zr = a * np.cos(ψ)
+            zr = a * math.cos(ψ)
 
             C1 = speed_s**2 - u1**2 - v1**2
             C2 = speed_e**2 - u2**2 - v2**2
             D1 = zl * u1 + y * v1
             D2 = zr * u2 + (Y - y) * v2
-            X1 = np.sqrt(D1**2 + C1 * (zl**2 + y**2))
-            X2 = np.sqrt(D2**2 + C2 * (zr**2 + (Y - y) ** 2))
+            X1 = math.sqrt(D1**2 + C1 * (zl**2 + y**2))
+            X2 = math.sqrt(D2**2 + C2 * (zr**2 + (Y - y) ** 2))
 
-            dzr = -a * np.sin(ψ) / (2 * R)  # -zr*np.sin(ψ)/R
-            dzl = -x * np.sin(θ) / (2 * R)  # -zl*np.sin(θ)/R
+            dzr = -a * math.sin(ψ) / (2 * R)  # -zr*math.sin(ψ)/R
+            dzl = -x * math.sin(θ) / (2 * R)  # -zl*math.sin(θ)/R
 
             dD1 = dzl * u1 + v1
             dD2 = dzr * u2 - v2
@@ -588,8 +591,8 @@ class Smoothing:
         else:
             sgn = -1
 
-        λ_s = Sp[1] * (np.pi / 180)
-        φ_r = Np[1] * (np.pi / 180)
+        λ_s = Sp[1] * (math.pi / 180)
+        φ_r = Np[1] * (math.pi / 180)
 
         x = dist_around_globe(Cp[0], Sp[0]) * 111.321 * 1000.0
         a = dist_around_globe(Np[0], Cp[0]) * 111.321 * 1000.0
@@ -723,22 +726,22 @@ class Smoothing:
                 X2 (float) - Characteristic X distance in end cell
 
             """
-            λ = λ * (np.pi / 180)
-            ψ = ψ * (np.pi / 180)
-            θ = θ * (np.pi / 180)
-            # r1  = np.cos(λ)/np.cos(θ)
-            r1 = np.cos((θ + 3 * λ) / 4) / np.cos(θ)
-            # r2  = np.cos(ψ)/np.cos(θ)
-            r2 = np.cos((θ + 3 * ψ) / 4) / np.cos(θ)
+            λ = λ * (math.pi / 180)
+            ψ = ψ * (math.pi / 180)
+            θ = θ * (math.pi / 180)
+            # r1  = math.cos(λ)/math.cos(θ)
+            r1 = math.cos((θ + 3 * λ) / 4) / math.cos(θ)
+            # r2  = math.cos(ψ)/math.cos(θ)
+            r2 = math.cos((θ + 3 * ψ) / 4) / math.cos(θ)
 
-            d1 = np.sqrt(x**2 + (r1 * y) ** 2)
-            d2 = np.sqrt(a**2 + (r2 * (Y - y)) ** 2)
+            d1 = math.sqrt(x**2 + (r1 * y) ** 2)
+            d2 = math.sqrt(a**2 + (r2 * (Y - y)) ** 2)
             C1 = speed_s**2 - u1**2 - v1**2
             C2 = speed_e**2 - u2**2 - v2**2
             D1 = x * u1 + r1 * v1 * y
             D2 = a * u2 + r2 * v2 * (Y - y)
-            X1 = np.sqrt(D1**2 + C1 * (d1**2))
-            X2 = np.sqrt(D2**2 + C2 * (d2**2))
+            X1 = math.sqrt(D1**2 + C1 * (d1**2))
+            X2 = math.sqrt(D2**2 + C2 * (d2**2))
 
             dX1 = (r1 * (D1 * v1 + r1 * C1 * y)) / X1
             dX2 = (-r2 * (D2 * v2 + r2 * C2 * (Y - y))) / X2
@@ -782,7 +785,7 @@ class Smoothing:
 
         x = sgn * (Cp[1] - Sp[1]) * 111.386 * 1000.0
         a = -sgn * (Np[1] - Cp[1]) * 111.386 * 1000.0
-        Y = sgn * (Np[0] - Sp[0]) * 111.321 * 1000 * np.cos(Cp[1] * (np.pi / 180))
+        Y = sgn * (Np[0] - Sp[0]) * 111.321 * 1000 * math.cos(Cp[1] * (math.pi / 180))
         Su = -sgn * cell_s_v
         Sv = sgn * cell_s_u
         Nu = -sgn * cell_e_v
@@ -793,7 +796,7 @@ class Smoothing:
             _F, y0, x, a, Y, Su, Sv, Nu, Nv, speed_s, speed_e, Rd, λ, θ, ψ
         )
 
-        Cp = (Sp[0] + sgn * y / (111.321 * 1000 * np.cos(Cp[1] * (np.pi / 180))), Cp[1])
+        Cp = (Sp[0] + sgn * y / (111.321 * 1000 * math.cos(Cp[1] * (math.pi / 180))), Cp[1])
 
         return Cp
 
@@ -869,8 +872,8 @@ class Smoothing:
             emax = cell_b["cy"] + cell_b["dcy"]
 
             # Defining the global min and max
-            vmin = np.max([smin, emin])
-            vmax = np.min([smax, emax])
+            vmin = max(smin, emin)
+            vmax = min(smax, emax)
 
             # Point lies on the boundary connecting up the
             # two adjacent cell pairs, the start and end cell.
@@ -915,8 +918,8 @@ class Smoothing:
             emax = cell_b["cx"] + cell_b["dcx"]
 
             # Defining the global min and max
-            vmin = np.max([smin, emin])
-            vmax = np.min([smax, emax])
+            vmin = max(smin, emin)
+            vmax = min(smax, emax)
 
             # Point lies on the boundary connecting up the
             # two adjacent cell pairs, the start and end cell.
@@ -1230,10 +1233,10 @@ class Smoothing:
             emax = cell_b["cy"] + cell_b["dcy"]
 
             # Defining the global min and max
-            vmin = np.max([smin, emin])
-            vmax = np.min([smax, emax])
+            vmin = max(smin, emin)
+            vmax = min(smax, emax)
 
-            x = (x[0], np.clip(x[1], vmin, vmax))
+            x = (x[0], min(max(x[1], vmin), vmax))
 
         elif abs(case) == 4:
             # Defining the min and max of the start and end cells
@@ -1243,10 +1246,10 @@ class Smoothing:
             emax = cell_b["cx"] + cell_b["dcx"]
 
             # Defining the global min and max
-            vmin = np.max([smin, emin])
-            vmax = np.min([smax, emax])
+            vmin = max(smin, emin)
+            vmax = min(smax, emax)
 
-            x = (np.clip(x[0], vmin, vmax), x[1])
+            x = (min(max(x[0], vmin), vmax), x[1])
 
         return x
 
@@ -1680,8 +1683,8 @@ class Smoothing:
                 )
                 if (
                     midpoint_prime is None
-                    or np.isnan(midpoint_prime[0])
-                    or np.isnan(midpoint_prime[1])
+                    or math.isnan(midpoint_prime[0])
+                    or math.isnan(midpoint_prime[1])
                 ):
                     raise RouteSmoothingError(
                         "Newton call failed to converge or recover"
