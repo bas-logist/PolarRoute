@@ -12,6 +12,7 @@ from polar_route.utils import (
     convert_decimal_days,
     to_chart_track_csv,
     extract_geojson_routes,
+    write_route_gpx,
 )
 from polar_route.vessel_performance.vessel_performance_modeller import (
     VesselPerformanceModeller,
@@ -275,9 +276,8 @@ def optimise_routes_cli():
             route_output_str = (
                 ".".join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".gpx"
             )
-            gdf = gpd.GeoDataFrame.from_features([route], crs="EPSG:4326")
             logger.info(f"Saving route to {route_output_str}")
-            gdf["geometry"].to_file(route_output_str, "GPX", engine="pyogrio")
+            write_route_gpx(route, route_output_str)
 
     # Optional output of Chart Track formatted csv
     if args.chart_track:
@@ -350,9 +350,8 @@ def extract_routes_cli():
             route_output_str = (
                 ".".join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".gpx"
             )
-            gdf = gpd.GeoDataFrame.from_features([route], crs="EPSG:4326")
             logger.info(f"Saving route to {route_output_str}")
-            gdf["geometry"].to_file(route_output_str, "GPX", engine="pyogrio")
+            write_route_gpx(route, route_output_str)
 
     elif output_file_strs[-1] == "kml":
         logger.info("Extracting routes in kml format")

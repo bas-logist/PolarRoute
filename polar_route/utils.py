@@ -9,6 +9,7 @@ import json
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+import gpxpy.gpx
 from datetime import datetime, timedelta
 from functools import wraps
 from calendar import monthrange
@@ -436,6 +437,29 @@ def gpx_route_import(f_name):
     geojson["features"][0]["properties"]["to"] = gdf_p["name"].iloc[-1]
 
     return geojson
+
+
+def write_route_gpx(route, f_name):
+    """
+    Write a route to a GPX file as a single route, with the start and end waypoint
+    names on its first and last route points so that gpx_route_import can read them back
+
+    Args:
+        route (dict): GeoJSON LineString feature in WGS84 longitude/latitude (EPSG:4326),
+            with "from" and "to" waypoint names in its properties
+        f_name (str): Filename of the gpx file to write
+    """
+    gpx_route = gpxpy.gpx.GPXRoute()
+    for lon, lat, *_ in route["geometry"]["coordinates"]:
+        gpx_route.points.append(gpxpy.gpx.GPXRoutePoint(latitude=lat, longitude=lon))
+    gpx_route.points[0].name = route["properties"]["from"]
+    gpx_route.points[-1].name = route["properties"]["to"]
+
+    gpx = gpxpy.gpx.GPX()
+    gpx.routes.append(gpx_route)
+    # gpxpy declares UTF-8 in the XML header, so the file must be written as UTF-8.
+    with open(f_name, "w", encoding="utf-8") as f:
+        f.write(gpx.to_xml())
 
 
 def to_chart_track_csv(route):

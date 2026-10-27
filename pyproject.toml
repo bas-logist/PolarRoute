@@ -45,6 +45,7 @@ dependencies = [
     "tqdm",
     "xarray",
     "pyogrio",
+    "gpxpy",
 ]
 
 [tool.setuptools]
