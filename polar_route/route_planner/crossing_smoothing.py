@@ -1282,10 +1282,11 @@ class Smoothing:
         mp_lon, mp_lat = midpoint
         lp_lon, lp_lat = lastpoint
 
-        # Approximate great-circle to 50000 point and determine point with closest misfit
-        _lonlats = np.array(self._g.npts(fp_lon, fp_lat, lp_lon, lp_lat, 50000))
+        # Approximate great-circle with a 500 points and determine
+        # the point with the closest misfit in longitude.
+        _lonlats = np.array(self._g.npts(fp_lon, fp_lat, lp_lon, lp_lat, 500))
         mp_lat_misfit = _lonlats[:, 0] - mp_lon
-        mp_lat_diff = _lonlats[np.argmin(abs(mp_lat_misfit)), 1] - mp_lat
+        mp_lat_diff = _lonlats[np.argmin(np.abs(mp_lat_misfit)), 1] - mp_lat
 
         # Straight Line Connecting points
         # mp_line = ((lp_lat-fp_lat)/(lp_lon-fp_lon))*(mp_lon-fp_lon) + fp_lat
