@@ -39,8 +39,6 @@ In order to run the test suite you will also need to include the `test` dependen
 pip install --group test
 ```
 
-> NOTE: Some features of the PolarRoute package require GDAL to be installed. Please consult the [documentation](https://bas-amop.github.io/PolarRoute) for further guidance.
-
 ## Usage
 
 PolarRoute operates by creating an environmental mesh, adding vessel performance characteristics, and optimizing routes between waypoints. Environmental meshes are created using [MeshiPhi](https://github.com/bas-amop/MeshiPhi), which is installed automatically when installing PolarRoute.
