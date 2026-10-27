@@ -1118,9 +1118,11 @@ class Smoothing:
             True if the cell cannot be entered, False if the cell can
         """
         new_case = cell_a["case"][
-            cell_a["neighbourIndex"].tolist().index(new_cell["id"])
+            np.flatnonzero(cell_a["neighbourIndex"] == new_cell["id"])[0]
         ]
-        old_case = cell_a["case"][cell_a["neighbourIndex"].tolist().index(cell_b["id"])]
+        old_case = cell_a["case"][
+            np.flatnonzero(cell_a["neighbourIndex"] == cell_b["id"])[0]
+        ]
 
         new_objective_start = cell_a[blocked_variable][self.direction.index(new_case)]
         new_objective_end = new_cell[blocked_variable][self.direction.index(new_case)]
@@ -1161,10 +1163,10 @@ class Smoothing:
             True if the cell cannot be entered, False if the cell can
         """
         new_tts = cell_a["neighbourTravelLegs"][
-            cell_a["neighbourIndex"].tolist().index(new_cell["id"])
+            np.flatnonzero(cell_a["neighbourIndex"] == new_cell["id"])[0]
         ]
         old_tts = cell_a["neighbourTravelLegs"][
-            cell_a["neighbourIndex"].tolist().index(cell_b["id"])
+            np.flatnonzero(cell_a["neighbourIndex"] == cell_b["id"])[0]
         ]
 
         new_tt_start = new_tts[0]
@@ -1377,38 +1379,26 @@ class Smoothing:
         edge_a_end_index = edge_a.end["id"]
         edge_b_end_index = edge_b.end["id"]
 
-        current_v = [
+        key = (
             edge_a_start_index,
             edge_a_end_index,
             edge_b_start_index,
             edge_b_end_index,
-            midpoint_prime,
-        ]
+        )
 
-        if len(self.previous_vs_info) == 0:
-            self.previous_vs_info += [current_v]
+        similar_midpoint_primes = self.previous_vs_info.get(key)
+
+        if not similar_midpoint_primes:
+            self.previous_vs_info[key] = [midpoint_prime]
             return False
 
         if (
-            current_v[:-1]
-            in np.array(self.previous_vs_info, dtype=object)[:, :-1].tolist()
+            np.min([self.dist(c, midpoint_prime) for c in similar_midpoint_primes])
+            <= self.merge_separation
         ):
-            previous_vs_info_np = np.array(self.previous_vs_info, dtype=object)
-            similar_midpoint_primes = previous_vs_info_np[
-                (previous_vs_info_np[:, :-1] == current_v[:-1]).all(axis=1), -1
-            ]
-
-            if (
-                np.min([self.dist(c, current_v[-1]) for c in similar_midpoint_primes])
-                <= self.merge_separation
-            ):
-                return True
-            else:
-                self.previous_vs_info += [current_v]
-                return False
-
+            return True
         else:
-            self.previous_vs_info += [current_v]
+            similar_midpoint_primes.append(midpoint_prime)
             return False
 
     def previous_us(self, edge_a, edge_b, edge_c, midpoint_prime):
@@ -1434,40 +1424,28 @@ class Smoothing:
         edge_b_end_index = edge_b.end["id"]
         edge_c_end_index = edge_c.end["id"]
 
-        current_u = [
+        key = (
             edge_a_start_index,
             edge_a_end_index,
             edge_b_start_index,
             edge_b_end_index,
             edge_c_start_index,
             edge_c_end_index,
-            midpoint_prime,
-        ]
+        )
 
-        if len(self.previous_us_info) == 0:
-            self.previous_us_info += [current_u]
+        similar_midpoint_primes = self.previous_us_info.get(key)
+
+        if not similar_midpoint_primes:
+            self.previous_us_info[key] = [midpoint_prime]
             return False
 
         if (
-            current_u[:-1]
-            in np.array(self.previous_us_info, dtype=object)[:, :-1].tolist()
+            np.min([self.dist(c, midpoint_prime) for c in similar_midpoint_primes])
+            <= self.merge_separation
         ):
-            previous_us_info_np = np.array(self.previous_us_info, dtype=object)
-            similar_midpoint_primes = previous_us_info_np[
-                (previous_us_info_np[:, :-1] == current_u[:-1]).all(axis=1), -1
-            ]
-
-            if (
-                np.min([self.dist(c, current_u[-1]) for c in similar_midpoint_primes])
-                <= self.merge_separation
-            ):
-                return True
-            else:
-                self.previous_us_info += [current_u]
-                return False
-
+            return True
         else:
-            self.previous_us_info += [current_u]
+            similar_midpoint_primes.append(midpoint_prime)
             return False
 
     def previous_diagonals(self, edge_a, edge_b, firstpoint, lastpoint):
@@ -1491,46 +1469,29 @@ class Smoothing:
         edge_a_end_index = edge_a.end["id"]
         edge_b_end_index = edge_b.end["id"]
 
-        current_diagonal = [
+        key = (
             edge_a_start_index,
             edge_a_end_index,
             edge_b_start_index,
             edge_b_end_index,
-            firstpoint,
-            lastpoint,
-        ]
+        )
 
-        if len(self.previous_diagonal_info) == 0:
-            self.previous_diagonal_info += [current_diagonal]
+        similar_start_end = self.previous_diagonal_info.get(key)
+
+        if not similar_start_end:
+            self.previous_diagonal_info[key] = [(firstpoint, lastpoint)]
             return False
 
-        if (
-            current_diagonal[:-2]
-            in np.array(self.previous_diagonal_info, dtype=object)[:, :-2].tolist()
-        ):
-            previous_diagonal_info_np = np.array(
-                self.previous_diagonal_info, dtype=object
-            )
-            similar_start_end = previous_diagonal_info_np[
-                (previous_diagonal_info_np[:, :-2] == current_diagonal[:-2]).all(
-                    axis=1
-                ),
-                -2:,
+        if np.any(
+            [
+                self.dist(c[0], firstpoint) <= self.merge_separation
+                and self.dist(c[1], lastpoint) <= self.merge_separation
+                for c in similar_start_end
             ]
-            if np.any(
-                [
-                    self.dist(c[0], current_diagonal[-2]) <= self.merge_separation
-                    and self.dist(c[1], current_diagonal[-1]) <= self.merge_separation
-                    for c in similar_start_end
-                ]
-            ):
-                return True
-            else:
-                self.previous_diagonal_info += [current_diagonal]
-                return False
-
+        ):
+            return True
         else:
-            self.previous_diagonal_info += [current_diagonal]
+            similar_start_end.append((firstpoint, lastpoint))
             return False
 
     def forward(self):
@@ -1580,9 +1541,9 @@ class Smoothing:
         self.previous_aps = []
         converged = False
         self.all_aps = []
-        self.previous_vs_info = []
-        self.previous_us_info = []
-        self.previous_diagonal_info = []
+        self.previous_vs_info = {}
+        self.previous_us_info = {}
+        self.previous_diagonal_info = {}
         while not converged:
             # Early stopping criterion
             if self.jj == self.max_iterations:
