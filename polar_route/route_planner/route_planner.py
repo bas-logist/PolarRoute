@@ -585,84 +585,46 @@ class RoutePlanner:
             wp (SourceWaypoint): object contains the lat, long information of the source waypoint
             end_wps(List(Waypoint)): a list of the end waypoints
         """
+        obj = self.config["objective_function"]
 
-        def find_min_objective(source_wp):
+        def consider_neighbours(_id):
             """
-            Finds the index of the unvisited cell in the source waypoint's routing table with the minimum cost for
-            the given objective function
+            Get neighbours of the cell at the input index and update the routing table (and cached
+            cost) of the source waypoint
             Args:
-                source_wp (SourceWaypoint): the SourceWaypoint object corresponding to the initial location
-
-            Returns:
-                cellbox_indx (str): the index of the minimum cost unvisited cell from the routing table
-            """
-            min_obj = np.inf
-            cellbox_indx = -1
-            for node_id in source_wp.routing_table.keys():
-                if (
-                    not source_wp.is_visited(node_id)
-                    and source_wp.get_obj(node_id, self.config["objective_function"])
-                    < min_obj
-                ):
-                    min_obj = source_wp.get_obj(
-                        node_id, self.config["objective_function"]
-                    )
-                    cellbox_indx = str(node_id)
-            return cellbox_indx
-
-        def consider_neighbours(source_wp, _id):
-            """
-            Get neighbours of the cell at the input index and update the routing table of the source waypoint
-            Args:
-                source_wp (SourceWaypoint): the relevant source waypoint
                 _id (str): index of the cell to get the neighbours for
-
             """
+            current_cost = wp.get_cached_cost(_id)
             neighbour_map = self.env_mesh.neighbour_graph.get_neighbour_map(
                 _id
             )  # neighbours and cases for node _id
             for case, neighbours in neighbour_map.items():
                 if neighbours:
                     for neighbour in neighbours:
-                        edges = self._neighbour_cost(_id, str(neighbour), int(case))
+                        nb_id = str(neighbour)
+                        edges = self._neighbour_cost(_id, nb_id, int(case))
                         edges_cost = sum(
-                            segment.get_variable(self.config["objective_function"])
-                            for segment in edges
+                            segment.get_variable(obj) for segment in edges
                         )
-                        new_cost = (
-                            source_wp.get_obj(_id, self.config["objective_function"])
-                            + edges_cost
-                        )
-                        if new_cost < source_wp.get_obj(
-                            str(neighbour), self.config["objective_function"]
-                        ):
-                            source_wp.update_routing_table(
-                                str(neighbour), RoutingInfo(_id, edges)
-                            )
+                        new_cost = current_cost + edges_cost
+                        if new_cost < wp.get_cached_cost(nb_id):
+                            wp.update_routing_table(nb_id, RoutingInfo(_id, edges))
+                            wp.set_cached_cost(nb_id, new_cost)
 
-        if not self.config["early_stopping_criterion"]:
-            run_all = False
-            while not run_all:
-                # Determine the index of the cell with the minimum objective function cost that has not yet been visited
-                min_obj_indx = find_min_objective(wp)
-                logger.debug(f"min_obj >>> {min_obj_indx}")
-                # If min_obj_indx is -1 then no route possible, and we stop search for this waypoint
-                if min_obj_indx == -1:
-                    break
-                consider_neighbours(wp, min_obj_indx)
-                wp.visit(min_obj_indx)
-        else:
-            while not (
-                wp.is_all_visited() and wp.is_all_cells_visited(self._required_nodes)
+        early_stopping = self.config["early_stopping_criterion"]
+
+        while True:
+            if early_stopping and wp.is_all_visited() and wp.is_all_cells_visited(
+                self._required_nodes
             ):
-                # Determine the index of the cell with the minimum objective function cost that has not yet been visited
-                min_obj_indx = find_min_objective(wp)
-                logger.debug(f"min_obj >>> {min_obj_indx}")
-                # If min_obj_indx is -1 then no route possible, and we stop search for this waypoint
-                if min_obj_indx == -1:
-                    break
-                consider_neighbours(wp, min_obj_indx)
-                wp.visit(min_obj_indx)
+                break
+            min_obj_indx, _ = wp.pop_min_unvisited()
+            # If min_obj_indx is -1 then no route possible, and we stop search for this waypoint
+            if min_obj_indx == -1:
+                break
+            logger.debug(f"min_obj >>> {min_obj_indx}")
+            consider_neighbours(min_obj_indx)
+            wp.visit(min_obj_indx)
 
     def _bidirectional_search(self, wp, e_wp):
         """
@@ -689,21 +651,6 @@ class RoutePlanner:
             self._backward_wps[key] = SourceWaypoint(e_wp, [])
         bwd_wp = self._backward_wps[key]
 
-        def find_min_objective(source_wp):
-            """
-            Finds the index and cost of the unvisited cell in the source waypoint's routing
-            table with the minimum cost for the given objective function
-            """
-            min_obj = np.inf
-            cellbox_indx = -1
-            for node_id in source_wp.routing_table.keys():
-                if not source_wp.is_visited(node_id):
-                    node_obj = source_wp.get_obj(node_id, obj)
-                    if node_obj < min_obj:
-                        min_obj = node_obj
-                        cellbox_indx = str(node_id)
-            return cellbox_indx, min_obj
-
         best_meeting = [np.inf, None]  # [cost, node] - mutated by the closures below
 
         def consider_neighbours(_id):
@@ -712,6 +659,7 @@ class RoutePlanner:
             whether any of these edges cross into the (already settled) backward frontier,
             which would represent a valid candidate meeting point.
             """
+            current_cost = wp.get_cached_cost(_id)
             neighbour_map = self.env_mesh.neighbour_graph.get_neighbour_map(_id)
             for case, neighbours in neighbour_map.items():
                 if neighbours:
@@ -721,15 +669,12 @@ class RoutePlanner:
                         edges_cost = sum(
                             segment.get_variable(obj) for segment in edges
                         )
-                        new_cost = wp.get_obj(_id, obj) + edges_cost
-                        if new_cost < wp.get_obj(nb_id, obj):
+                        new_cost = current_cost + edges_cost
+                        if new_cost < wp.get_cached_cost(nb_id):
                             wp.update_routing_table(nb_id, RoutingInfo(_id, edges))
+                            wp.set_cached_cost(nb_id, new_cost)
                         if bwd_wp.is_visited(nb_id):
-                            total = (
-                                wp.get_obj(_id, obj)
-                                + edges_cost
-                                + bwd_wp.get_obj(nb_id, obj)
-                            )
+                            total = new_cost + bwd_wp.get_cached_cost(nb_id)
                             if total < best_meeting[0]:
                                 best_meeting[0] = total
                                 best_meeting[1] = nb_id
@@ -744,6 +689,7 @@ class RoutePlanner:
             (already settled) forward frontier, which would represent a valid candidate meeting
             point.
             """
+            current_cost = bwd_wp.get_cached_cost(_id)
             neighbour_map = self.env_mesh.neighbour_graph.get_neighbour_map(_id)
             for neighbours in neighbour_map.values():
                 if neighbours:
@@ -766,15 +712,12 @@ class RoutePlanner:
                         edges_cost = sum(
                             segment.get_variable(obj) for segment in edges
                         )
-                        new_cost = bwd_wp.get_obj(_id, obj) + edges_cost
-                        if new_cost < bwd_wp.get_obj(pred_id, obj):
+                        new_cost = current_cost + edges_cost
+                        if new_cost < bwd_wp.get_cached_cost(pred_id):
                             bwd_wp.update_routing_table(pred_id, RoutingInfo(_id, edges))
+                            bwd_wp.set_cached_cost(pred_id, new_cost)
                         if wp.is_visited(pred_id):
-                            total = (
-                                wp.get_obj(pred_id, obj)
-                                + edges_cost
-                                + bwd_wp.get_obj(_id, obj)
-                            )
+                            total = wp.get_cached_cost(pred_id) + edges_cost + current_cost
                             if total < best_meeting[0]:
                                 best_meeting[0] = total
                                 best_meeting[1] = pred_id
@@ -783,11 +726,15 @@ class RoutePlanner:
         while not (done and wp.is_all_cells_visited(self._required_nodes)):
             progressed = False
 
-            # Scan both frontiers once per iteration. These same costs are reused below both
-            # to select which node to expand and (before expanding) to check the standard
-            # bidirectional stopping rule, avoiding a redundant rescan after expansion.
-            fwd_indx, fwd_cost = find_min_objective(wp)
-            bwd_indx, bwd_cost = find_min_objective(bwd_wp) if not done else (-1, np.inf)
+            # Peek (without removing) the cheapest not-yet-visited node in each frontier's
+            # heap. These same costs are reused below both to select which node to expand and
+            # (before expanding) to check the standard bidirectional stopping rule, avoiding a
+            # redundant rescan after expansion. Using peek rather than pop here means a
+            # frontier that isn't expanded this round (e.g. backward, once `done` becomes
+            # True) leaves its candidate available for a later call reusing the same
+            # `wp`/`bwd_wp` (e.g. the next destination or source waypoint).
+            fwd_indx, fwd_cost = wp.peek_min_unvisited()
+            bwd_indx, bwd_cost = bwd_wp.peek_min_unvisited() if not done else (-1, np.inf)
 
             if not done:
                 # Standard bidirectional stopping rule: once the sum of the smallest remaining
@@ -804,12 +751,14 @@ class RoutePlanner:
 
             # Expand the forward frontier by one node
             if fwd_indx != -1:
+                wp.pop_min_unvisited()
                 progressed = True
                 consider_neighbours(fwd_indx)
                 wp.visit(fwd_indx)
 
             # Expand the backward frontier by one node
             if not done and bwd_indx != -1:
+                bwd_wp.pop_min_unvisited()
                 progressed = True
                 consider_predecessors(bwd_indx)
                 bwd_wp.visit(bwd_indx)
