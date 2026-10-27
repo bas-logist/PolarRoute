@@ -786,13 +786,14 @@ class RoutePlanner:
         for idx, row in waypoints_df.iterrows():
             point = Point([row["Long"], row["Lat"]])
             # Only allow waypoints that lie within the bounds of the env_mesh
-            if not point.within(mesh_boundary):
+            if not mesh_boundary.covers(point):
                 logger.info(
-                    f"Waypoint {row['Name']} at Lat: {row['Lat']}, Long {row['Long']} is outside the mesh and "
-                    f"will be disregarded!"
+                    f"Waypoint {row['Name']} at Lat: {row['Lat']}, "
+                    f"Long {row['Long']} is outside the mesh and will be disregarded!"
                 )
-                waypoints_df.drop(idx)
+                waypoints_df = waypoints_df.drop(index=idx)
                 continue
+            
             # Move waypoint to the closest accessible cellbox, if it isn't in one already
             if self.config["adjust_waypoints"]:
                 logger.debug(
