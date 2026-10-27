@@ -20,8 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Waypoints outside the mesh are now actually dropped: the result of `waypoints_df.drop()` is assigned in `RoutePlanner`, so disregarded waypoints are removed (#349).
-
-### Fixed
 * Waypoint validation in `RoutePlanner` no longer removes waypoints from the input list while iterating over it, which caused waypoints to be skipped. Valid waypoints are now collected in a new list.
 
 
