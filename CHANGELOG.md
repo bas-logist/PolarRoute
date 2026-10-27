@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Adjust `pip install -e .[dev]` command in CONTRIBUTING.md to use the `dev` dependency group.
 * `route_calc()` can now accept a route as a GeoJSON in addition to a DataFrame.
 * Extracted geojson-to-DataFrame parsing in `load_route()` into a shared `route_geojson_to_df()` helper, reused by both the json and gpx.
+* Waypoints lying exactly on the mesh boundary are now accepted by `RoutePlanner` (uses `mesh_boundary.covers(point)` instead of `point.within(mesh_boundary)`).
+
+### Fixed
+* Waypoints outside the mesh are now actually dropped: the result of `waypoints_df.drop()` is assigned in `RoutePlanner`, so disregarded waypoints are removed (#349).
 
 ## [1.1.11] - 2026-07-02
 
