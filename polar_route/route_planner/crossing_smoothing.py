@@ -404,6 +404,12 @@ class Smoothing:
 
                 self.dijkstra_graph[key] = cell
 
+        # Cache for _neighbour_indices, keyed on the cell/case identifiers.
+        # Mesh adjacency (cell["case"]/cell["neighbourIndex"]) is static once
+        # set above, so results are safe to memoise for the lifetime of a
+        # Smoothing instance.
+        self._neighbour_indices_cache = {}
+
     def _long_case(self, start, end, case, Sp, Cp, Np):
         """
         Longitude based smoothing updating the crossing point given the conditions
@@ -976,6 +982,11 @@ class Smoothing:
             additional_indices (list) - A list of possible cell indices to add. None if no index added.
             additional_cases (list) - A list of the cases connecting the additional cell indices. None if no index added.
         """
+        cache_key = (cell_a["id"], cell_b["id"], case, add_case_a, add_case_b)
+        cached = self._neighbour_indices_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         cell_a_neighbours = cell_a["neighbourIndex"][cell_a["case"] == add_case_a]
         cell_b_neighbours = cell_b["neighbourIndex"][cell_b["case"] == add_case_b]
 
@@ -983,7 +994,9 @@ class Smoothing:
         v_connections = set(cell_a_neighbours).intersection(cell_b_neighbours)
         if len(v_connections) != 0:
             if len(v_connections) == 1:
-                return list(v_connections), [add_case_a, -add_case_b]
+                result = (list(v_connections), [add_case_a, -add_case_b])
+                self._neighbour_indices_cache[cache_key] = result
+                return result
 
         # Determining possible u-connections
         for cell_a_neighbour in cell_a_neighbours:
@@ -993,8 +1006,14 @@ class Smoothing:
             )
             if len(_connections) == 1 and (abs(add_case_a) == abs(add_case_b)):
                 u_connections = [cell_a_neighbour, list(_connections)[0]]
-                return list(u_connections), [add_case_a, case, -add_case_b]
+                result = (
+                    list(u_connections),
+                    [add_case_a, case, -add_case_b],
+                )
+                self._neighbour_indices_cache[cache_key] = result
+                return result
 
+        self._neighbour_indices_cache[cache_key] = (None, None)
         return None, None
 
     def _neighbour_cells(self, cell_a, cell_b, case, add_case_a, add_case_b):
