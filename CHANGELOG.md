@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `route_calc()` can now accept a route as a GeoJSON in addition to a DataFrame.
 * Extracted geojson-to-DataFrame parsing in `load_route()` into a shared `route_geojson_to_df()` helper, reused by both the json and gpx.
 
+### Fixed
+* Waypoint validation in `RoutePlanner` no longer removes waypoints from the input list while iterating over it, which caused waypoints to be skipped. Valid waypoints are now collected in a new list.
+
+
 ## [1.1.11] - 2026-07-02
 
 

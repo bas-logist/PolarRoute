@@ -1070,25 +1070,35 @@ class RoutePlanner:
                 return ids[1]
             return ids[0]
 
-        valid_wps = wps
+        valid_wps = []
+
         for wp in wps:
             wp_id = []
+
             for indx in range(len(self.env_mesh.agg_cellboxes)):
+                cellbox = self.env_mesh.agg_cellboxes[indx]
+
                 if (
-                    self.env_mesh.agg_cellboxes[indx].contains_point(
-                        wp.get_latitude(), wp.get_longitude()
+                    cellbox.contains_point(
+                        wp.get_latitude(),
+                        wp.get_longitude(),
                     )
-                    and not self.env_mesh.agg_cellboxes[indx].agg_data["inaccessible"]
+                    and not cellbox.agg_data["inaccessible"]
                 ):
-                    wp_id.append(self.env_mesh.agg_cellboxes[indx].get_id())
-                    wp.set_cellbox_indx(str(self.env_mesh.agg_cellboxes[indx].get_id()))
+                    wp_id.append(cellbox.get_id())
+
             if not wp_id:
                 logger.warning(f"{wp.get_name()} is not an accessible waypoint")
-                valid_wps.remove(wp)
+                continue
 
-            if len(wp_id) > 1:  # the source wp is on the border of 2 cellboxes
+            if len(wp_id) > 1:
+                # Waypoint is on the border of multiple cellboxes
                 _id = select_cellbox(wp_id)
-                wp.set_cellbox_indx(str(_id))
+            else:
+                _id = wp_id[0]
+
+            wp.set_cellbox_indx(str(_id))
+            valid_wps.append(wp)
 
         return valid_wps
 
