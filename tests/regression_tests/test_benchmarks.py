@@ -8,6 +8,7 @@ test fixtures, ranging from small to large meshes.
 Run with: `pytest -m benchmark --benchmark-only`
 """
 
+import copy
 import json
 
 import pytest
@@ -18,6 +19,7 @@ DIJKSTRA_BENCHMARK_FILES = {
     "small": "example_routes/dijkstra/time/twin_otter_tt_route_dijkstra.json",
     "medium": "example_routes/dijkstra/fuel/checkerboard.json",
     "large": "example_routes/dijkstra/fuel/gaussian_random_field.json",
+    "complex": "example_routes/dijkstra/fuel/gaussian_random_field_waypointsplitting.json",
 }
 
 SMOOTHED_BENCHMARK_FILES = {
@@ -30,6 +32,7 @@ BENCHMARK_ROUNDS = {
     "small": 5,
     "medium": 3,
     "large": 1,
+    "complex": 1,
 }
 
 
@@ -40,12 +43,36 @@ def _load_route(relative_path):
 
 @pytest.mark.benchmark
 @pytest.mark.parametrize(
-    "size", ["small", "medium", "large"], ids=["small", "medium", "large"]
+    "size",
+    ["small", "medium", "large", "complex"],
+    ids=["small", "medium", "large", "complex"],
 )
 def test_benchmark_dijkstra(benchmark, size):
-    """Benchmark `compute_routes()` (Dijkstra) across small/medium/large meshes."""
+    """Benchmark `compute_routes()` (Dijkstra) across small/medium/large/complex meshes."""
     route = _load_route(DIJKSTRA_BENCHMARK_FILES[size])
     config = route["config"]["route_info"]
+
+    benchmark.pedantic(
+        calculate_dijkstra_route,
+        args=(config, route),
+        rounds=BENCHMARK_ROUNDS[size],
+        iterations=1,
+    )
+
+
+@pytest.mark.benchmark
+@pytest.mark.parametrize(
+    "size",
+    ["small", "medium", "large", "complex"],
+    ids=["small", "medium", "large", "complex"],
+)
+def test_benchmark_bidirectional_dijkstra(benchmark, size):
+    """Benchmark `compute_routes()` with `bidirectional_dijkstra` enabled, across
+    small/medium/large/complex meshes, for direct comparison against
+    `test_benchmark_dijkstra`."""
+    route = _load_route(DIJKSTRA_BENCHMARK_FILES[size])
+    config = copy.deepcopy(route["config"]["route_info"])
+    config["bidirectional_dijkstra"] = True
 
     benchmark.pedantic(
         calculate_dijkstra_route,
@@ -71,3 +98,4 @@ def test_benchmark_smoothed(benchmark, size):
         rounds=BENCHMARK_ROUNDS[size],
         iterations=1,
     )
+

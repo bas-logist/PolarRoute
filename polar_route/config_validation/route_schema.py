@@ -19,6 +19,8 @@ route_schema = {
         "adjust_waypoints":{"type": "boolean"},
         "zero_currents": {"type": "boolean"},
         "fixed_speed": {"type": "boolean"},
+        "early_stopping_criterion": {"type": "boolean"},
+        "bidirectional_dijkstra": {"type": "boolean"},
         "smoothing_blocked_sic": {"type": "number"},
         "smoothing_max_iterations": {"type": "integer"},
         "smoothing_merge_separation": {"type": "number"},

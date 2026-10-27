@@ -288,6 +288,10 @@ class RoutePlanner:
         if "early_stopping_criterion" not in self.config:
             self.config["early_stopping_criterion"] = True
 
+        # Bidirectional Dijkstra not specified then define as false (opt-in optimisation)
+        if "bidirectional_dijkstra" not in self.config:
+            self.config["bidirectional_dijkstra"] = False
+
         # Required nodes to visit
         self._required_nodes = []
 
@@ -354,6 +358,11 @@ class RoutePlanner:
         self.routes_smoothed = []
         self.neighbour_legs = {}
         self.direction = [1, 2, 3, 4, -1, -2, -3, -4]
+
+        # Cache of backward searches (one per destination cellbox id) used by
+        # `_bidirectional_dijkstra`. Reused/expanded across multiple source waypoints since a
+        # backward search from a fixed destination doesn't depend on the source waypoint.
+        self._backward_wps = {}
 
     def _splitting_around_waypoints(self, waypoints_df):
         """
@@ -655,6 +664,188 @@ class RoutePlanner:
                 consider_neighbours(wp, min_obj_indx)
                 wp.visit(min_obj_indx)
 
+    def _bidirectional_search(self, wp, e_wp):
+        """
+        Runs a bidirectional variant of Dijkstra searching forward from the source
+        waypoint `wp` and backward from the end waypoint `e_wp` simultaneously, meeting in the
+        middle.
+
+        Args:
+            wp (SourceWaypoint): object contains the lat, long information of the source waypoint
+            e_wp (Waypoint): the end waypoint to search towards
+
+        Returns:
+            best_cost (float): the cost of the shortest path from `wp` to `e_wp`, or `np.inf` if
+                no route exists
+            best_node (str or None): the cellbox index at which the forward and backward
+                searches meet on the shortest path, or `None` if no route exists
+            bwd_wp (SourceWaypoint): the backward search object rooted at `e_wp`, needed by
+                `_splice_meeting_path` to reconstruct the route
+        """
+        obj = self.config["objective_function"]
+
+        key = e_wp.get_cellbox_indx()
+        if key not in self._backward_wps:
+            self._backward_wps[key] = SourceWaypoint(e_wp, [])
+        bwd_wp = self._backward_wps[key]
+
+        def find_min_objective(source_wp):
+            """
+            Finds the index and cost of the unvisited cell in the source waypoint's routing
+            table with the minimum cost for the given objective function
+            """
+            min_obj = np.inf
+            cellbox_indx = -1
+            for node_id in source_wp.routing_table.keys():
+                if not source_wp.is_visited(node_id):
+                    node_obj = source_wp.get_obj(node_id, obj)
+                    if node_obj < min_obj:
+                        min_obj = node_obj
+                        cellbox_indx = str(node_id)
+            return cellbox_indx, min_obj
+
+        best_meeting = [np.inf, None]  # [cost, node] - mutated by the closures below
+
+        def consider_neighbours(_id):
+            """
+            Relaxes the forward neighbours of the newly-settled cell at `_id`. Also checks
+            whether any of these edges cross into the (already settled) backward frontier,
+            which would represent a valid candidate meeting point.
+            """
+            neighbour_map = self.env_mesh.neighbour_graph.get_neighbour_map(_id)
+            for case, neighbours in neighbour_map.items():
+                if neighbours:
+                    for neighbour in neighbours:
+                        nb_id = str(neighbour)
+                        edges = self._neighbour_cost(_id, nb_id, int(case))
+                        edges_cost = sum(
+                            segment.get_variable(obj) for segment in edges
+                        )
+                        new_cost = wp.get_obj(_id, obj) + edges_cost
+                        if new_cost < wp.get_obj(nb_id, obj):
+                            wp.update_routing_table(nb_id, RoutingInfo(_id, edges))
+                        if bwd_wp.is_visited(nb_id):
+                            total = (
+                                wp.get_obj(_id, obj)
+                                + edges_cost
+                                + bwd_wp.get_obj(nb_id, obj)
+                            )
+                            if total < best_meeting[0]:
+                                best_meeting[0] = total
+                                best_meeting[1] = nb_id
+
+        def consider_predecessors(_id):
+            """
+            Relaxes the predecessors of the newly-settled cell at `_id` in the backward search.
+            Since mesh adjacency is symmetric, the geometric neighbours of `_id` are exactly the
+            candidate predecessors X for which an edge X -> _id may exist. The edge cost is
+            computed in the true forward direction (X -> _id) to correctly account for
+            asymmetric edge costs. Also checks whether any of these edges cross into the
+            (already settled) forward frontier, which would represent a valid candidate meeting
+            point.
+            """
+            neighbour_map = self.env_mesh.neighbour_graph.get_neighbour_map(_id)
+            for neighbours in neighbour_map.values():
+                if neighbours:
+                    for neighbour in neighbours:
+                        pred_id = str(neighbour)
+                        case = self.env_mesh.neighbour_graph.get_neighbour_case(
+                            self.cellboxes_lookup[pred_id],
+                            self.cellboxes_lookup[_id],
+                        )
+                        if case == 0:
+                            case = self.env_mesh.neighbour_graph.get_global_mesh_neighbour_case(
+                                self.cellboxes_lookup[pred_id],
+                                self.cellboxes_lookup[_id],
+                            )
+                        if case == 0:
+                            # Not neighbours in the forward direction (can happen at mesh
+                            # boundaries handled differently by the two lookup methods), skip.
+                            continue
+                        edges = self._neighbour_cost(pred_id, _id, int(case))
+                        edges_cost = sum(
+                            segment.get_variable(obj) for segment in edges
+                        )
+                        new_cost = bwd_wp.get_obj(_id, obj) + edges_cost
+                        if new_cost < bwd_wp.get_obj(pred_id, obj):
+                            bwd_wp.update_routing_table(pred_id, RoutingInfo(_id, edges))
+                        if wp.is_visited(pred_id):
+                            total = (
+                                wp.get_obj(pred_id, obj)
+                                + edges_cost
+                                + bwd_wp.get_obj(_id, obj)
+                            )
+                            if total < best_meeting[0]:
+                                best_meeting[0] = total
+                                best_meeting[1] = pred_id
+
+        done = False
+        while not (done and wp.is_all_cells_visited(self._required_nodes)):
+            progressed = False
+
+            # Scan both frontiers once per iteration. These same costs are reused below both
+            # to select which node to expand and (before expanding) to check the standard
+            # bidirectional stopping rule, avoiding a redundant rescan after expansion.
+            fwd_indx, fwd_cost = find_min_objective(wp)
+            bwd_indx, bwd_cost = find_min_objective(bwd_wp) if not done else (-1, np.inf)
+
+            if not done:
+                # Standard bidirectional stopping rule: once the sum of the smallest remaining
+                # unvisited cost in each direction is >= the best meeting cost found so far (or
+                # both frontiers are exhausted), the shortest path is known and cannot be
+                # improved by further expansion in either direction. Costs only increase as
+                # each frontier expands (non-negative edge weights), so it's safe to check this
+                # using the costs already scanned above, before settling either node this
+                # iteration, rather than rescanning again afterwards.
+                if (fwd_cost == np.inf and bwd_cost == np.inf) or (
+                    fwd_cost + bwd_cost >= best_meeting[0]
+                ):
+                    done = True
+
+            # Expand the forward frontier by one node
+            if fwd_indx != -1:
+                progressed = True
+                consider_neighbours(fwd_indx)
+                wp.visit(fwd_indx)
+
+            # Expand the backward frontier by one node
+            if not done and bwd_indx != -1:
+                progressed = True
+                consider_predecessors(bwd_indx)
+                bwd_wp.visit(bwd_indx)
+
+            if not progressed:
+                # Forward and backward frontiers are both exhausted
+                break
+
+        return best_meeting[0], best_meeting[1], bwd_wp
+
+
+    def _splice_meeting_path(self, wp, bwd_wp, meeting_node, destination_key):
+        """
+        Splices the backward path from `meeting_node` to `destination_key` (found by
+        `_bidirectional_search`) into `wp`'s routing table, so `_dijkstra_routes` can trace the
+        route exactly as it would for a purely forward search.
+
+        Note this mutates `wp.routing_table`; since the same `wp` is reused across multiple end
+        waypoints, callers should snapshot and restore `wp.routing_table` around calls to this
+        method to avoid different end waypoints' spliced paths clashing on shared intermediate
+        cellboxes.
+
+        Args:
+            wp (SourceWaypoint): the source waypoint whose routing table should be spliced into
+            bwd_wp (SourceWaypoint): the backward search object rooted at the destination
+            meeting_node (str): the cellbox index at which the forward and backward searches meet
+            destination_key (str): the cellbox index of the destination waypoint
+        """
+        node_indx = meeting_node
+        while node_indx != destination_key:
+            info = bwd_wp.routing_table[node_indx]
+            next_hop = info.node_indx
+            wp.update_routing_table(next_hop, RoutingInfo(node_indx, info.path))
+            node_indx = next_hop
+
+
     def _neighbour_cost(self, node_id, neighbour_id, case):
         """
         Determines the neighbour cost when travelling from the cell at node_id to the cell at neighbour_id given the
@@ -830,12 +1021,39 @@ class RoutePlanner:
 
         logger.info("============= Dijkstra Route Creation ============")
         logger.info(f" - Objective = {self.config['objective_function']}")
-        for wp in src_wps:
-            logger.info("--- Processing Source Waypoint = {}".format(wp.get_name()))
-            self._dijkstra(wp, end_wps)
-
-        # Using Dijkstra graph compute route and meta information to all end_waypoints
-        routes = self._dijkstra_routes(src_wps, end_wps)
+        use_bidirectional = (
+            self.config["bidirectional_dijkstra"]
+            and self.config["early_stopping_criterion"]
+        )
+        if use_bidirectional:
+            routes = []
+            for wp in src_wps:
+                logger.info(
+                    "--- Processing Source Waypoint = {}".format(wp.get_name())
+                )
+                for e_wp in end_wps:
+                    best_cost, best_node, bwd_wp = self._bidirectional_search(
+                        wp, e_wp
+                    )
+                    # Snapshot the routing table so the splice below (which is specific to this
+                    # end waypoint) can be rolled back before moving on to the next end
+                    # waypoint, avoiding different end waypoints' spliced paths clashing on
+                    # shared intermediate cellboxes.
+                    saved_routing_table = dict(wp.routing_table)
+                    if best_node is not None:
+                        self._splice_meeting_path(
+                            wp, bwd_wp, best_node, e_wp.get_cellbox_indx()
+                        )
+                    routes.extend(self._dijkstra_routes([wp], [e_wp]))
+                    wp.routing_table = saved_routing_table
+        else:
+            for wp in src_wps:
+                logger.info(
+                    "--- Processing Source Waypoint = {}".format(wp.get_name())
+                )
+                self._dijkstra(wp, end_wps)
+            # Using Dijkstra graph compute route and meta information to all end_waypoints
+            routes = self._dijkstra_routes(src_wps, end_wps)
         logger.info("Dijkstra routing complete...")
         self.routes_dijkstra = routes
         # Returning the constructed routes

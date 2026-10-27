@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `route_calc()` can now accept a route as a GeoJSON in addition to a DataFrame.
 * Extracted geojson-to-DataFrame parsing in `load_route()` into a shared `route_geojson_to_df()` helper, reused by both the json and gpx.
 * Performance benchmark tests (`tests/regression_tests/test_benchmarks.py`) for `compute_routes()` and `compute_smoothed_routes()`, run via `make benchmark`.
+* `bidirectional_dijkstra` route config option, enabling a bidirectional Dijkstra search (simultaneous forward search from the source and backward search from each destination, meeting in the middle) to reduce route calculation time for large/complex meshes. See [docs/config/route_planning.md](docs/config/route_planning.md) for details.
+
 
 ### Fixed
 * Waypoint validation in `RoutePlanner` no longer removes waypoints from the input list while iterating over it, which caused waypoints to be skipped. Valid waypoints are now collected in a new list.
