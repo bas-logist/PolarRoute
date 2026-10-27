@@ -262,7 +262,7 @@ def optimise_routes_cli():
             route_output_str = (
                 ".".join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".kml"
             )
-            gdf = gpd.GeoDataFrame.from_features([route])
+            gdf = gpd.GeoDataFrame.from_features([route], crs="EPSG:4326")
             logger.info(f"Saving route to {route_output_str}")
             gdf["geometry"].to_file(route_output_str, "KML", engine="pyogrio")
 
@@ -275,7 +275,7 @@ def optimise_routes_cli():
             route_output_str = (
                 ".".join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".gpx"
             )
-            gdf = gpd.GeoDataFrame.from_features([route])
+            gdf = gpd.GeoDataFrame.from_features([route], crs="EPSG:4326")
             logger.info(f"Saving route to {route_output_str}")
             gdf["geometry"].to_file(route_output_str, "GPX", engine="pyogrio")
 
@@ -350,7 +350,7 @@ def extract_routes_cli():
             route_output_str = (
                 ".".join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".gpx"
             )
-            gdf = gpd.GeoDataFrame.from_features([geojson_output])
+            gdf = gpd.GeoDataFrame.from_features([route], crs="EPSG:4326")
             logger.info(f"Saving route to {route_output_str}")
             gdf["geometry"].to_file(route_output_str, "GPX", engine="pyogrio")
 
@@ -362,7 +362,7 @@ def extract_routes_cli():
             route_output_str = (
                 ".".join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".kml"
             )
-            gdf = gpd.GeoDataFrame.from_features([geojson_output])
+            gdf = gpd.GeoDataFrame.from_features([route], crs="EPSG:4326")
             logger.info(f"Saving route to {route_output_str}")
             gdf["geometry"].to_file(route_output_str, "KML", engine="pyogrio")
 

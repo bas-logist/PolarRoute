@@ -126,10 +126,11 @@ class Route:
 
     def to_gpx(self):
         """
-        Converts the constructed route into a geo-dataframe with fields matching gpx format
+        Converts the constructed route into a geo-dataframe with fields matching gpx format,
+        in WGS84 longitude/latitude (EPSG:4326)
         """
         route = self.to_json()
-        gdf = gpd.GeoDataFrame.from_features([route])
+        gdf = gpd.GeoDataFrame.from_features([route], crs="EPSG:4326")
         return gdf
 
     def save(self, file_path):
