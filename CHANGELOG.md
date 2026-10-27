@@ -10,11 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+* Removed dead Google Colab notebook links from docs/examples.md and README.
+* Declare dependencies in `pyproject.toml` instead of `requirements.txt` and remove `requirements.txt`.
+* Adjust `pip install -e .[dev]` command in CONTRIBUTING.md to use the `dev` dependency group.
+* `route_calc()` can now accept a route as a GeoJSON in addition to a DataFrame.
+* Extracted geojson-to-DataFrame parsing in `load_route()` into a shared `route_geojson_to_df()` helper, reused by both the json and gpx.
 
 ### Fixed
 * Waypoint validation in `RoutePlanner` no longer removes waypoints from the input list while iterating over it, which caused waypoints to be skipped. Valid waypoints are now collected in a new list.
 
+
 ## [1.1.11] - 2026-07-02
+
 
 ### Added
 
