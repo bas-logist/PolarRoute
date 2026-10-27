@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Adjust `pip install -e .[dev]` command in CONTRIBUTING.md to use the `dev` dependency group.
 * `route_calc()` can now accept a route as a GeoJSON in addition to a DataFrame.
 * Extracted geojson-to-DataFrame parsing in `load_route()` into a shared `route_geojson_to_df()` helper, reused by both the json and gpx.
+* Performance benchmark tests (`tests/regression_tests/test_benchmarks.py`) for `compute_routes()` and `compute_smoothed_routes()`, run via `make benchmark`.
 
 ### Fixed
 * Waypoint validation in `RoutePlanner` no longer removes waypoints from the input list while iterating over it, which caused waypoints to be skipped. Valid waypoints are now collected in a new list.

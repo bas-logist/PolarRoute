@@ -1,0 +1,65 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+env:
+  # Percentage by which the mean benchmark time is allowed to regress.
+  BENCHMARK_THRESHOLD: 10
+
+jobs:
+  benchmark:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Cache GDAL
+        uses: actions/cache@v4
+        id: cache-gdal
+        with:
+          path: |
+            /usr/lib/x86_64-linux-gnu/libgdal*
+            /usr/include/gdal*
+            /usr/bin/gdal*
+          key: gdal-ubuntu-latest
+      - name: Install GDAL
+        if: steps.cache-gdal.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdal-bin libgdal-dev
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --group test
+          pip install .
+
+      - name: Run benchmarks
+        run: make benchmark-check THRESHOLD="$BENCHMARK_THRESHOLD"
+
+      - name: Update benchmark baseline file
+        if: github.event_name == 'push'
+        run: make benchmark-update-baseline
+
+      - name: Open PR with updated baseline
+        if: github.event_name == 'push'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: update benchmark baseline"
+          title: "chore: update benchmark baseline"
+          body: |
+            Automated update of `.github/benchmark-baseline.json` from the
+            latest benchmark run on `main` (${{ github.sha }}).
+          branch: chore/update-benchmark-baseline
+          delete-branch: true
+          add-paths: .github/benchmark-baseline.json

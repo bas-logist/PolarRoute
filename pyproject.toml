@@ -70,7 +70,8 @@ extract_routes = "polar_route.cli:extract_routes_cli"
 log_cli = true
 log_format = "[%(asctime)s] %(levelname)s : %(message)s"
 markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "benchmark: marks performance benchmark tests (select with '-m benchmark')"
 ]
 
 [dependency-groups]
@@ -88,4 +89,5 @@ test = [
     "pytest",
     "pytest-xdist",
     "pytest-cov",
+    "pytest-benchmark",
 ]

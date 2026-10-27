@@ -24,6 +24,9 @@ The following commands are available via the Makefile:
 - **`make install`** - Install package with all dependencies
 - **`make test`** - Run fast tests only (excludes slow tests)
 - **`make test-all`** - Run all tests including slow ones
+- **`make benchmark`** - Run performance benchmark tests
+- **`make benchmark-check`** - Run benchmarks and compare against the committed baseline (`.github/benchmark-baseline.json`), failing on regression (`THRESHOLD=10` for 10%, the default). This is the same check CI runs on pull requests.
+- **`make benchmark-update-baseline`** - Regenerate `.github/benchmark-baseline.json` from a fresh run. CI does this automatically (via a PR) after every merge to `main`; run it yourself only if you need to refresh the baseline locally.
 - **`make lint`** - Run linting checks with Ruff
 - **`make format`** - Format code with Ruff
 - **`make coverage`** - Generate coverage report (terminal and HTML)
