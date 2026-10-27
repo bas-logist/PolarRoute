@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
-* Replaced `fiona` with `pyogrio` for KML/GPX I/O via GeoPandas (requires `geopandas>=1.0`). `pyogrio` ships wheels with GDAL bundled, so no system GDAL is needed to install PolarRoute on Python 3.14.
-* KML/GPX route exports and `Route.to_gpx()` now set the CRS to EPSG:4326 explicitly, which removes the "'crs' was not provided" warning. Coordinates written are unchanged.
+* Replaced `fiona` with `pyogrio` for KML I/O and GPX reading via GeoPandas (requires `geopandas>=1.0`). `pyogrio` ships wheels with GDAL bundled, so no system GDAL is needed to install PolarRoute on Python 3.14.
+* KML route exports now set the CRS to EPSG:4326 explicitly, which removes the "'crs' was not provided" warning. Coordinates written are unchanged.
 * Removed dead Google Colab notebook links from docs/examples.md and README.
 * Removed the "Installing GDAL" section from docs/installation.md, as PolarRoute no longer needs a system GDAL install.
 * Declare dependencies in `pyproject.toml` instead of `requirements.txt` and remove `requirements.txt`.
@@ -20,7 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Extracted geojson-to-DataFrame parsing in `load_route()` into a shared `route_geojson_to_df()` helper, reused by both the json and gpx.
 * Waypoints lying exactly on the mesh boundary are now accepted by `RoutePlanner` (uses `mesh_boundary.covers(point)` instead of `point.within(mesh_boundary)`).
 
+### Removed
+* `Route.to_gpx()`, which was no longer used now that `Route.save` writes GPX with `gpxpy`.
+
 ### Fixed
+* GPX route files written by `optimise_routes --path_gpx`, `extract_routes` and `Route.save` now carry the start and end waypoint names on their first and last route points, so `calculate_route` no longer loses the `from`/`to` names when given a GPX route. GPX files are now written with the new `gpxpy` dependency instead of GeoPandas/GDAL, always as UTF-8.
 * Waypoints outside the mesh are now actually dropped: the result of `waypoints_df.drop()` is assigned in `RoutePlanner`, so disregarded waypoints are removed (#349).
 * `extract_routes` no longer crashes with an `UnboundLocalError` when writing `.kml` or `.gpx` output.
 * Waypoint validation in `RoutePlanner` no longer removes waypoints from the input list while iterating over it, which caused waypoints to be skipped. Valid waypoints are now collected in a new list.
