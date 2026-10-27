@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
-* Replaced `fiona` with `pyogrio` for KML I/O and GPX reading via GeoPandas (requires `geopandas>=1.0`). `pyogrio` ships wheels with GDAL bundled, so no system GDAL is needed to install PolarRoute on Python 3.14.
+* Replaced `fiona` with `pyogrio` for KML I/O and GPX reading via GeoPandas (requires `geopandas>=1.0`). `pyogrio` ships wheels with GDAL bundled, so no system GDAL is needed to install PolarRoute on any supported Python version.
 * KML route exports now set the CRS to EPSG:4326 explicitly, which removes the "'crs' was not provided" warning. Coordinates written are unchanged.
 * Removed dead Google Colab notebook links from docs/examples.md and README.
 * Removed the "Installing GDAL" section from docs/installation.md, as PolarRoute no longer needs a system GDAL install.
