@@ -364,6 +364,27 @@ class RoutePlanner:
         # backward search from a fixed destination doesn't depend on the source waypoint.
         self._backward_wps = {}
 
+        self._env_mesh_json_cache = None
+
+    def _get_env_mesh_json(self):
+        """
+        Returns the cached JSON representation of self.env_mesh, computing and caching it
+        on first access. self.env_mesh.to_json() is expensive (it serialises the whole mesh
+        via json.dumps/json.loads, including regenerating cellbox geometry strings, to
+        sanitise numpy types) and is otherwise called repeatedly per route computation with
+        an unchanged mesh.
+
+        The returned object is the cached instance itself, not a copy - callers that mutate
+        the returned cellboxes (e.g. compute_smoothed_routes, via initialise_dijkstra_graph)
+        must take their own copy first to avoid corrupting the cache for later callers.
+
+        Returns:
+            env_mesh_json (dict): JSON representation of self.env_mesh
+        """
+        if self._env_mesh_json_cache is None:
+            self._env_mesh_json_cache = self.env_mesh.to_json()
+        return self._env_mesh_json_cache
+
     def _splitting_around_waypoints(self, waypoints_df):
         """
         Applying splitting around waypoints if this is defined in config. This is applied
@@ -396,6 +417,7 @@ class RoutePlanner:
             ]
             self._required_nodes += list(set(new_cells) - set(prior_cells))
             self.env_mesh = EnvironmentMesh.load_from_json(self.env_mesh.to_json())
+            self._env_mesh_json_cache = None
             self.cellboxes_lookup = {
                 str(
                     self.env_mesh.agg_cellboxes[i].get_id()
@@ -922,7 +944,7 @@ class RoutePlanner:
         self.waypoints_df = waypoints_df
 
         # Check waypoints are within mesh and adjust inaccessible waypoints if required
-        env_mesh_json = self.env_mesh.to_json()
+        env_mesh_json = self._get_env_mesh_json()
         mesh_boundary = _mesh_boundary_polygon(env_mesh_json)
         for idx, row in waypoints_df.iterrows():
             point = Point([row["Long"], row["Lat"]])
@@ -1040,9 +1062,12 @@ class RoutePlanner:
         geojson = {}
         smoothed_routes = []
 
-        mesh_json = self.env_mesh.to_json()
+        mesh_json = self._get_env_mesh_json()
         neighbour_graph = mesh_json["neighbour_graph"]
-        cellboxes = mesh_json["cellboxes"]
+        # initialise_dijkstra_graph mutates cellbox dicts in place (adding "case",
+        # "neighbourIndex", etc.), so a copy is taken here to avoid corrupting the cached
+        # mesh JSON (shared with other callers of _get_env_mesh_json, e.g. to_json()).
+        cellboxes = copy.deepcopy(mesh_json["cellboxes"])
 
         for route in routes:
             route_json = route.to_json(route_type="dijkstra")
@@ -1278,9 +1303,11 @@ class RoutePlanner:
             output_json (dict): the full mesh and route information in json format
 
         """
-        # Get base output of environment mesh object
-        output_json = self.env_mesh.to_json()
-        # Add route config
+        # Get base output of environment mesh object. Shallow-copy the top-level dict (and
+        # the "config" sub-dict, which is mutated below) so the additions below don't leak
+        # into the cached mesh JSON returned by _get_env_mesh_json() for other callers.
+        output_json = dict(self._get_env_mesh_json())
+        output_json["config"] = dict(output_json["config"])
         output_json["config"]["route_info"] = self.config
         # Add waypoints navigated between
         output_json["waypoints"] = self.waypoints_df.to_dict()
