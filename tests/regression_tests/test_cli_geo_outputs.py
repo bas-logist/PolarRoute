@@ -26,14 +26,11 @@ EXAMPLE_ROUTE = (
     / "twin_otter_tt_route.json"
 )
 
-# Writing a KML file from a GeoDataFrame with no CRS set makes GeoPandas emit this
-# warning. Coordinates are unaffected, so the warning is the only sign of a missing CRS.
-# GPX files are written with gpxpy, and GPX is always WGS84 longitude/latitude.
+# A KML file written from a GeoDataFrame with no CRS makes GeoPandas emit this warning.
 pytestmark = pytest.mark.filterwarnings("error:'crs' was not provided:UserWarning")
 
-# GDAL writes KML coordinates with 15 significant digits (gpxpy writes GPX ones in full),
-# and calculate_route recomputes costs along a different code path from the optimiser,
-# so values differ by floating-point rounding only: at most ~1e-14 on the example route.
+# GDAL writes KML coordinates with 15 significant digits, and calculate_route sums costs
+# in a different order from the optimiser; both differ by at most ~1e-14 on this route.
 GEO_FILE_REL_TOL = 1e-12
 
 # Paths of the (config, mesh, waypoints) files the CLI entry points take.
@@ -96,19 +93,6 @@ def optimised_paths(optimised_routes: Path) -> list[dict[str, Any]]:
     return paths
 
 
-def write_route_collection(optimised_routes: Path, path: Path) -> Path:
-    """Write the routes from an `optimise_routes` output as a bare GeoJSON FeatureCollection.
-
-    This is the route-only file format that `extract_routes` and `calculate_route` also accept.
-    """
-    path.write_text(
-        json.dumps(
-            {"type": "FeatureCollection", "features": optimised_paths(optimised_routes)}
-        )
-    )
-    return path
-
-
 def assert_matches_route(gdf: gpd.GeoDataFrame, route: dict[str, Any]) -> None:
     """Assert the first geometry in `gdf` has the same coordinates as the route feature."""
     expected = [x for c in route["geometry"]["coordinates"] for x in c]
@@ -116,23 +100,34 @@ def assert_matches_route(gdf: gpd.GeoDataFrame, route: dict[str, Any]) -> None:
     assert actual == pytest.approx(expected, rel=GEO_FILE_REL_TOL)
 
 
-def test_optimise_routes_writes_kml_and_gpx(optimised_routes: Path) -> None:
-    """`optimise_routes` writes KML and GPX files holding the route."""
+def test_optimise_routes_writes_kml_and_gpx(
+    cli_inputs: CliInputs,
+    optimised_routes: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`optimise_routes` writes KML and GPX files holding the route, and `calculate_route`
+    costs the GPX file, with its waypoint names, the same as the optimiser did."""
     out_dir = optimised_routes.parent
+    gpx_route = out_dir / "out.route_SourceDestination.gpx"
     [route] = optimised_paths(optimised_routes)
 
     assert_matches_route(
-        gpd.read_file(out_dir / "out.route_SourceDestination.kml", engine="pyogrio"),
-        route,
+        gpd.read_file(out_dir / "out.route_SourceDestination.kml"), route
     )
-    assert_matches_route(
-        gpd.read_file(
-            out_dir / "out.route_SourceDestination.gpx",
-            layer="routes",
-            engine="pyogrio",
-        ),
-        route,
-    )
+    assert_matches_route(gpd.read_file(gpx_route, layer="routes"), route)
+
+    _, mesh, _ = cli_inputs
+    output = tmp_path / "calculated.json"
+    run_cli(monkeypatch, calculate_route_cli, mesh, gpx_route, "-o", output)
+    with open(output) as fp:
+        calculated = json.load(fp)["features"][0]["properties"]
+    for key in ("from", "to"):
+        assert calculated[key] == route["properties"][key]
+    for key in ("traveltime", "fuel", "distance"):
+        assert calculated[key] == pytest.approx(
+            route["properties"][key], rel=GEO_FILE_REL_TOL
+        ), key
 
 
 # One case per output writer and per input branch of `extract_routes_cli`.
@@ -147,44 +142,18 @@ def test_extract_routes_writes_kml_and_gpx(
     source: str,
 ) -> None:
     """`extract_routes` writes KML or GPX from a full mesh output or a bare route file."""
-    if source == "mesh_output":
-        route_input = optimised_routes
-    else:
-        route_input = write_route_collection(optimised_routes, tmp_path / "routes.json")
+    [route] = optimised_paths(optimised_routes)
+    route_input = optimised_routes
+    if source == "route_collection":
+        route_input = tmp_path / "routes.json"
+        route_input.write_text(
+            json.dumps({"type": "FeatureCollection", "features": [route]})
+        )
     output = tmp_path / "extracted" / f"route.{extension}"
     output.parent.mkdir()
-    [route] = optimised_paths(optimised_routes)
 
     run_cli(monkeypatch, extract_routes_cli, route_input, "-o", output)
 
     extracted = output.parent / f"route_SourceDestination.{extension}"
     layer = "routes" if extension == "gpx" else None
-    assert_matches_route(gpd.read_file(extracted, layer=layer, engine="pyogrio"), route)
-
-
-def test_calculate_route_accepts_gpx_input(
-    cli_inputs: CliInputs,
-    optimised_routes: Path,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """`calculate_route` costs a GPX route, and keeps its start and end waypoint names,
-    the same as the optimiser did."""
-    _, mesh, _ = cli_inputs
-    gpx_route = optimised_routes.parent / "out.route_SourceDestination.gpx"
-    output = tmp_path / "calculated.json"
-    [optimised] = optimised_paths(optimised_routes)
-
-    run_cli(monkeypatch, calculate_route_cli, mesh, gpx_route, "-o", output)
-
-    with open(output) as fp:
-        calculated = json.load(fp)["features"][0]["properties"]
-    assert (calculated["from"], calculated["to"]) == (
-        optimised["properties"]["from"],
-        optimised["properties"]["to"],
-    )
-    # Costs recomputed along the route must match the optimiser's own costs.
-    for key in ("traveltime", "fuel", "distance"):
-        assert calculated[key] == pytest.approx(
-            optimised["properties"][key], rel=GEO_FILE_REL_TOL
-        ), key
+    assert_matches_route(gpd.read_file(extracted, layer=layer), route)

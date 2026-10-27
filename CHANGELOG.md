@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `Route.to_gpx()`, which was no longer used now that `Route.save` writes GPX with `gpxpy`.
 
 ### Fixed
-* GPX route files written by `optimise_routes --path_gpx`, `extract_routes` and `Route.save` now carry the start and end waypoint names on their first and last route points, so `calculate_route` no longer loses the `from`/`to` names when given a GPX route. GPX files are now written with the new `gpxpy` dependency instead of GeoPandas/GDAL, always as UTF-8.
+* GPX files from `optimise_routes`, `extract_routes` and `Route.save` are now written with `gpxpy` and keep the start and end waypoint names, so `calculate_route` no longer loses `from`/`to` for GPX routes.
 * Waypoints outside the mesh are now actually dropped: the result of `waypoints_df.drop()` is assigned in `RoutePlanner`, so disregarded waypoints are removed (#349).
 * `extract_routes` no longer crashes with an `UnboundLocalError` when writing `.kml` or `.gpx` output.
 * Waypoint validation in `RoutePlanner` no longer removes waypoints from the input list while iterating over it, which caused waypoints to be skipped. Valid waypoints are now collected in a new list.

@@ -2,12 +2,7 @@ import logging
 import json
 import numpy as np
 from polar_route.route_planner.crossing import traveltime_in_cell
-from polar_route.utils import (
-    unit_time,
-    unit_speed,
-    case_from_angle,
-    write_route_gpx,
-)
+from polar_route.utils import unit_time, unit_speed, case_from_angle, write_route_gpx
 from meshiphi.utils import longitude_domain
 
 # Module logger

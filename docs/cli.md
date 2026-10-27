@@ -137,10 +137,7 @@ optional arguments are
 --path_gpx (also output each route as a GPX file)
 ```
 
-KML and GPX files are named after the output location and the route's start and end waypoints, for example
-`-o out.route.json` gives `out.route_SourceDestination.kml` for a route from *Source* to *Destination*. Spaces in
-waypoint names become underscores. GPX files hold the start and end waypoint names on their first and last route
-points, so they can be passed back to `calculate_route`.
+KML and GPX files are named `<output base>_<from><to>.<ext>`, for example `out.route_SourceDestination.kml`.
 
 
 The format of the returned *route.json* file is explained in :ref:`the route.json file` section of this documentation.
@@ -168,8 +165,7 @@ optional arguments:
 ```
 
 Running this command will calculate the cost of a route between a set of waypoints provided in csv, geojson or gpx
-format. For a gpx route, the names of its first and last route points are used as the start and end waypoint names;
-if they have no names, these are left empty. The route is assumed to travel from waypoint to waypoint in the order they are given, following a rhumb line.
+format (for gpx, the first and last route point names are the start and end waypoint names). The route is assumed to travel from waypoint to waypoint in the order they are given, following a rhumb line.
 The format of the output *route.json* file is identical to that from the :ref:`optimise_routes` command.
 This is explained in :ref:`the route.json file` section of the documentation. The time and fuel cost of the route will
 also be logged out once the route file has been generated. If the user-defined route crosses a cell in the mesh that is

@@ -424,8 +424,8 @@ def gpx_route_import(f_name):
     Returns:
         geojson: Route in geojson format
     """
-    gdf_r = gpd.read_file(f_name, layer="routes", engine="pyogrio")
-    gdf_p = gpd.read_file(f_name, layer="route_points", engine="pyogrio")
+    gdf_r = gpd.read_file(f_name, layer="routes")
+    gdf_p = gpd.read_file(f_name, layer="route_points")
 
     # Drop empty fields from original gpx file
     gdf_r = gdf_r.dropna(how="all", axis=1)
@@ -441,8 +441,8 @@ def gpx_route_import(f_name):
 
 def write_route_gpx(route, f_name):
     """
-    Write a route to a GPX file as a single route, with the start and end waypoint
-    names on its first and last route points so that gpx_route_import can read them back
+    Write a route to a GPX file, with the start and end waypoint names on its first and
+    last points so that gpx_route_import can read them back
 
     Args:
         route (dict): GeoJSON LineString feature in WGS84 longitude/latitude (EPSG:4326),

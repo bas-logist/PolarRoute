@@ -265,7 +265,7 @@ def optimise_routes_cli():
             )
             gdf = gpd.GeoDataFrame.from_features([route], crs="EPSG:4326")
             logger.info(f"Saving route to {route_output_str}")
-            gdf["geometry"].to_file(route_output_str, "KML", engine="pyogrio")
+            gdf["geometry"].to_file(route_output_str, "KML")
 
     # Optional output of smoothed route(s) to standalone GPX file(s)
     if args.path_gpx:
@@ -363,7 +363,7 @@ def extract_routes_cli():
             )
             gdf = gpd.GeoDataFrame.from_features([route], crs="EPSG:4326")
             logger.info(f"Saving route to {route_output_str}")
-            gdf["geometry"].to_file(route_output_str, "KML", engine="pyogrio")
+            gdf["geometry"].to_file(route_output_str, "KML")
 
     elif output_file_strs[-1] == "csv":
         logger.info("Extracting routes in ChartTrack csv format")
