@@ -3,7 +3,6 @@
 ![](./docs/assets/logo.jpg)
 
 ![Dev Status](https://img.shields.io/badge/Status-Active-green)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/12D-CN10X7xAcXn_df0zNLHtdiiXxZVkz?usp=sharing)
 [![Documentation](https://img.shields.io/badge/Manual%20-github.io%2FPolarRoute%2F-red)](https://bas-amop.github.io/PolarRoute/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/polarroute)
 [![Release Tag](https://img.shields.io/github/v/tag/bas-amop/PolarRoute)](https://github.com/bas-amop/polarroute/tags)
