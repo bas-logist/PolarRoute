@@ -922,7 +922,8 @@ class RoutePlanner:
         self.waypoints_df = waypoints_df
 
         # Check waypoints are within mesh and adjust inaccessible waypoints if required
-        mesh_boundary = _mesh_boundary_polygon(self.env_mesh.to_json())
+        env_mesh_json = self.env_mesh.to_json()
+        mesh_boundary = _mesh_boundary_polygon(env_mesh_json)
         for idx, row in waypoints_df.iterrows():
             point = Point([row["Long"], row["Lat"]])
             # Only allow waypoints that lie within the bounds of the env_mesh
@@ -939,7 +940,7 @@ class RoutePlanner:
                     "Adjusting waypoints in inaccessible cells to nearest accessible location"
                 )
                 adjusted_point = _adjust_waypoints(
-                    point, self.env_mesh.to_json()["cellboxes"]
+                    point, env_mesh_json["cellboxes"]
                 )
 
                 waypoints_df.loc[idx, "Long"] = adjusted_point.x
