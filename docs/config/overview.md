@@ -7,7 +7,7 @@ Each stage of the route-planning process is configured by a separate configurati
 The configuration files are written in JSON, and are passed to each stage of the 
 route-planning process as command-line arguments or through a Python script.
 
-Example configuration files are provided in the `config` directory of [the repository](https://github.com/bas-amop/PolarRoute/tree/main/examples).
+Example configuration files are provided in the `config` directory of [the repository](https://github.com/bas-logist/PolarRoute/tree/main/examples).
 
 The format of the config used to generate an environmental mesh can be found in the [Configuration - Mesh Construction](https://bas-amop.github.io/MeshiPhi/html/sections/Configuration/Mesh_construction_config.html) section of the [MeshiPhi documentation](https://bas-amop.github.io/MeshiPhi/).
 

@@ -2,7 +2,6 @@ import argparse
 import json
 import inspect
 import logging
-import fiona
 import pandas as pd
 import geopandas as gpd
 from meshiphi.mesh_generation.mesh_builder import MeshBuilder
@@ -13,6 +12,7 @@ from polar_route.utils import (
     convert_decimal_days,
     to_chart_track_csv,
     extract_geojson_routes,
+    write_route_gpx,
 )
 from polar_route.vessel_performance.vessel_performance_modeller import (
     VesselPerformanceModeller,
@@ -22,10 +22,6 @@ from polar_route.route_calc import route_calc, load_route
 
 # Module logger
 logger = logging.getLogger(__name__)
-
-fiona.drvsupport.supported_drivers["KML"] = (
-    "rw"  # enable KML support which is disabled by default
-)
 
 
 @setup_logging
@@ -267,7 +263,7 @@ def optimise_routes_cli():
             route_output_str = (
                 ".".join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".kml"
             )
-            gdf = gpd.GeoDataFrame.from_features([route])
+            gdf = gpd.GeoDataFrame.from_features([route], crs="EPSG:4326")
             logger.info(f"Saving route to {route_output_str}")
             gdf["geometry"].to_file(route_output_str, "KML")
 
@@ -280,9 +276,8 @@ def optimise_routes_cli():
             route_output_str = (
                 ".".join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".gpx"
             )
-            gdf = gpd.GeoDataFrame.from_features([route])
             logger.info(f"Saving route to {route_output_str}")
-            gdf["geometry"].to_file(route_output_str, "GPX")
+            write_route_gpx(route, route_output_str)
 
     # Optional output of Chart Track formatted csv
     if args.chart_track:
@@ -355,9 +350,8 @@ def extract_routes_cli():
             route_output_str = (
                 ".".join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".gpx"
             )
-            gdf = gpd.GeoDataFrame.from_features([geojson_output])
             logger.info(f"Saving route to {route_output_str}")
-            gdf["geometry"].to_file(route_output_str, "GPX")
+            write_route_gpx(route, route_output_str)
 
     elif output_file_strs[-1] == "kml":
         logger.info("Extracting routes in kml format")
@@ -367,7 +361,7 @@ def extract_routes_cli():
             route_output_str = (
                 ".".join(output_file_strs[:-1]) + "_" + from_wp + to_wp + ".kml"
             )
-            gdf = gpd.GeoDataFrame.from_features([geojson_output])
+            gdf = gpd.GeoDataFrame.from_features([route], crs="EPSG:4326")
             logger.info(f"Saving route to {route_output_str}")
             gdf["geometry"].to_file(route_output_str, "KML")
 

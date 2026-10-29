@@ -326,7 +326,7 @@ def compare_cellbox_values(mesh_a: Dict, mesh_b: Dict) -> None:
             df[col] = round_to_sigfig(df[col].to_numpy(), sigfig=SIG_FIG_TOLERANCE)
 
         # Round floats within list columns
-        for col in df.select_dtypes(include=list).columns:
+        for col in df.select_dtypes(include=object).columns:
             df[col] = df[col].apply(
                 lambda val: round_to_sigfig(val, sigfig=SIG_FIG_TOLERANCE)
                 if isinstance(val, list) and all(isinstance(x, float) for x in val)

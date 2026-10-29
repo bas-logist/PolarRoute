@@ -3,14 +3,13 @@
 ![](./docs/assets/logo.jpg)
 
 ![Dev Status](https://img.shields.io/badge/Status-Active-green)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/12D-CN10X7xAcXn_df0zNLHtdiiXxZVkz?usp=sharing)
-[![Documentation](https://img.shields.io/badge/Manual%20-github.io%2FPolarRoute%2F-red)](https://bas-amop.github.io/PolarRoute/)
+[![Documentation](https://img.shields.io/badge/Manual%20-github.io%2FPolarRoute%2F-red)](https://bas-logist.github.io/PolarRoute/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/polarroute)
-[![Release Tag](https://img.shields.io/github/v/tag/bas-amop/PolarRoute)](https://github.com/bas-amop/polarroute/tags)
-[![Issues](https://img.shields.io/github/issues/bas-amop/PolarRoute)](https://github.com/bas-amop/PolarRoute/issues)
-[![License](https://img.shields.io/github/license/bas-amop/PolarRoute)](https://github.com/bas-amop/PolarRoute/blob/main/LICENSE)
-[![Test Status](https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml/badge.svg)](https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml)
-[![Coverage](https://img.shields.io/badge/coverage-report-blue)](https://github.com/bas-amop/PolarRoute/actions/workflows/test.yml)
+[![Release Tag](https://img.shields.io/github/v/tag/bas-logist/PolarRoute)](https://github.com/bas-logist/PolarRoute/tags)
+[![Issues](https://img.shields.io/github/issues/bas-logist/PolarRoute)](https://github.com/bas-logist/PolarRoute/issues)
+[![License](https://img.shields.io/github/license/bas-logist/PolarRoute)](https://github.com/bas-logist/PolarRoute/blob/main/LICENSE)
+[![Test Status](https://github.com/bas-logist/PolarRoute/actions/workflows/test.yml/badge.svg)](https://github.com/bas-logist/PolarRoute/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/badge/coverage-report-blue)](https://github.com/bas-logist/PolarRoute/actions/workflows/test.yml)
 [![Ruff](https://img.shields.io/badge/code%20style-ruff-0C3A5C?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
 [![DOI](https://zenodo.org/badge/450086048.svg)](https://doi.org/10.5281/zenodo.21134233)
 
@@ -27,7 +26,7 @@ pip install polar-route
 
 Alternatively you can install PolarRoute by downloading the source code from GitHub:
 ```
-git clone https://github.com/bas-amop/PolarRoute
+git clone https://github.com/bas-logist/PolarRoute
 cd PolarRoute
 pip install -e .
 ```
@@ -39,8 +38,6 @@ In order to run the test suite you will also need to include the `test` dependen
 ```
 pip install --group test
 ```
-
-> NOTE: Some features of the PolarRoute package require GDAL to be installed. Please consult the [documentation](https://bas-amop.github.io/PolarRoute) for further guidance.
 
 ## Usage
 
@@ -82,7 +79,7 @@ rp.compute_routes(waypoints_path)
 routes_json = rp.to_json()
 ```
 
-For more details, see the [CLI documentation](https://bas-amop.github.io/PolarRoute/cli/), [examples](https://bas-amop.github.io/PolarRoute/examples/), and the [examples/](examples/) directory.
+For more details, see the [CLI documentation](https://bas-logist.github.io/PolarRoute/cli/), [examples](https://bas-logist.github.io/PolarRoute/examples/), and the [examples/](examples/) directory.
 
 ## Required Data sources
 PolarRoute has been built to work with a variety of open-source atmospheric and oceanographic data sources. For testing and demonstration purposes it is also possible to generate artificial Gaussian Random Field data.

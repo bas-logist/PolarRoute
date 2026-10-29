@@ -131,9 +131,13 @@ optional arguments are
 ```sh
 -v (verbose logging)
 -o <output location> (set output location for mesh)
--p (output only the calculated path, not the entire mesh)
+-p, --path_geojson (also output the routes as a standalone GeoJSON file)
 -d (output Dijkstra path as well as smoothed path)
+--path_kml (also output each route as a KML file)
+--path_gpx (also output each route as a GPX file)
 ```
+
+KML and GPX files are named `<output base>_<from><to>.<ext>`, for example `out.route_SourceDestination.kml`.
 
 
 The format of the returned *route.json* file is explained in :ref:`the route.json file` section of this documentation.
@@ -160,8 +164,8 @@ optional arguments:
 -o : output location
 ```
 
-Running this command will calculate the cost of a route between a set of waypoints provided in either csv or geojson
-format. The route is assumed to travel from waypoint to waypoint in the order they are given, following a rhumb line.
+Running this command will calculate the cost of a route between a set of waypoints provided in csv, geojson or gpx
+format (for gpx, the first and last route point names are the start and end waypoint names). The route is assumed to travel from waypoint to waypoint in the order they are given, following a rhumb line.
 The format of the output *route.json* file is identical to that from the :ref:`optimise_routes` command.
 This is explained in :ref:`the route.json file` section of the documentation. The time and fuel cost of the route will
 also be logged out once the route file has been generated. If the user-defined route crosses a cell in the mesh that is
