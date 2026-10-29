@@ -14,7 +14,7 @@ pip install polar-route
 For development purposes you can install PolarRoute by downloading the source code from GitHub:
 
 ```sh
-git clone https://github.com/Antarctica/PolarRoute
+git clone https://github.com/bas-logist/PolarRoute
 cd PolarRoute
 pip install -e .
 ```
