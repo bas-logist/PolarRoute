@@ -2257,9 +2257,12 @@ waypoints marked with an <strong>X</strong> in the <em>Source</em> column to all
 <p>optional arguments are</p>
 <div class="highlight"><pre><span></span><code>-v<span class="w"> </span><span class="o">(</span>verbose<span class="w"> </span>logging<span class="o">)</span>
 -o<span class="w"> </span>&lt;output<span class="w"> </span>location&gt;<span class="w"> </span><span class="o">(</span><span class="nb">set</span><span class="w"> </span>output<span class="w"> </span>location<span class="w"> </span><span class="k">for</span><span class="w"> </span>mesh<span class="o">)</span>
--p<span class="w"> </span><span class="o">(</span>output<span class="w"> </span>only<span class="w"> </span>the<span class="w"> </span>calculated<span class="w"> </span>path,<span class="w"> </span>not<span class="w"> </span>the<span class="w"> </span>entire<span class="w"> </span>mesh<span class="o">)</span>
+-p,<span class="w"> </span>--path_geojson<span class="w"> </span><span class="o">(</span>also<span class="w"> </span>output<span class="w"> </span>the<span class="w"> </span>routes<span class="w"> </span>as<span class="w"> </span>a<span class="w"> </span>standalone<span class="w"> </span>GeoJSON<span class="w"> </span>file<span class="o">)</span>
 -d<span class="w"> </span><span class="o">(</span>output<span class="w"> </span>Dijkstra<span class="w"> </span>path<span class="w"> </span>as<span class="w"> </span>well<span class="w"> </span>as<span class="w"> </span>smoothed<span class="w"> </span>path<span class="o">)</span>
+--path_kml<span class="w"> </span><span class="o">(</span>also<span class="w"> </span>output<span class="w"> </span>each<span class="w"> </span>route<span class="w"> </span>as<span class="w"> </span>a<span class="w"> </span>KML<span class="w"> </span>file<span class="o">)</span>
+--path_gpx<span class="w"> </span><span class="o">(</span>also<span class="w"> </span>output<span class="w"> </span>each<span class="w"> </span>route<span class="w"> </span>as<span class="w"> </span>a<span class="w"> </span>GPX<span class="w"> </span>file<span class="o">)</span>
 </code></pre></div>
+<p>KML and GPX files are named <code>&lt;output base&gt;_&lt;from&gt;&lt;to&gt;.&lt;ext&gt;</code>, for example <code>out.route_SourceDestination.kml</code>.</p>
 <p>The format of the returned <em>route.json</em> file is explained in :ref:<code>the route.json file</code> section of this documentation.</p>
 <h2 id="calculate_route"><code>calculate_route</code><a class="headerlink" href="#calculate_route" title="Permanent link">&para;</a></h2>
 <p>The cost of a user-defined route through a pre-generated mesh containing vehicle information can be calculated using the command:</p>
@@ -2273,8 +2276,8 @@ route<span class="w"> </span>:<span class="w"> </span>A<span class="w"> </span>r
 <div class="highlight"><pre><span></span><code>-v<span class="w"> </span>:<span class="w"> </span>verbose<span class="w"> </span>logging
 -o<span class="w"> </span>:<span class="w"> </span>output<span class="w"> </span>location
 </code></pre></div>
-<p>Running this command will calculate the cost of a route between a set of waypoints provided in either csv or geojson
-format. The route is assumed to travel from waypoint to waypoint in the order they are given, following a rhumb line.
+<p>Running this command will calculate the cost of a route between a set of waypoints provided in csv, geojson or gpx
+format (for gpx, the first and last route point names are the start and end waypoint names). The route is assumed to travel from waypoint to waypoint in the order they are given, following a rhumb line.
 The format of the output <em>route.json</em> file is identical to that from the :ref:<code>optimise_routes</code> command.
 This is explained in :ref:<code>the route.json file</code> section of the documentation. The time and fuel cost of the route will
 also be logged out once the route file has been generated. If the user-defined route crosses a cell in the mesh that is

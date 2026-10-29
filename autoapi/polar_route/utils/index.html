@@ -1531,6 +1531,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#polar_route.utils.write_route_gpx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        write_route_gpx
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2257,6 +2268,17 @@
     <span class="md-ellipsis">
       
         unit_time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#polar_route.utils.write_route_gpx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        write_route_gpx
       
     </span>
   </a>
@@ -3082,6 +3104,73 @@ In addition, it supports a nice pattern for CLI endpoints</p>
     </table>
         <p>Returns:
     val (float) - output time in the converted units</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="polar_route.utils.write_route_gpx" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">write_route_gpx</span><span class="p">(</span><span class="n">route</span><span class="p">,</span> <span class="n">f_name</span><span class="p">)</span></code>
+
+<a href="#polar_route.utils.write_route_gpx" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Write a route to a GPX file, with the start and end waypoint names on its first and
+last points so that gpx_route_import can read them back</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>route</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>GeoJSON LineString feature in WGS84 longitude/latitude (EPSG:4326),
+with "from" and "to" waypoint names in its properties</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>f_name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Filename of the gpx file to write</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>

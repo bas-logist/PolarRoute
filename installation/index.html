@@ -364,45 +364,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#installing-gdal-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Installing GDAL (Optional)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Installing GDAL (Optional)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#windows" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Windows
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#linuxmacos" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Linux/MacOS
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -2040,45 +2001,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#installing-gdal-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Installing GDAL (Optional)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Installing GDAL (Optional)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#windows" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Windows
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#linuxmacos" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Linux/MacOS
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -2123,41 +2045,6 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <h2 id="installing-geoplot">Installing GeoPlot<a class="headerlink" href="#installing-geoplot" title="Permanent link">&para;</a></h2>
 <p>Plotting functionality for the outputs of PolarRoute is provided by the <a href="https://github.com/antarctica/GeoPlot"><strong>GeoPlot</strong></a> package, also developed at BAS.</p>
 <p>Geoplot is available from PyPI and can be installed by running: <code>pip install bas-geoplot</code></p>
-<h2 id="installing-gdal-optional">Installing GDAL (Optional)<a class="headerlink" href="#installing-gdal-optional" title="Permanent link">&para;</a></h2>
-<p>PolarRoute has GDAL as an optional requirement. It is only used when exporting TIFF images, 
-so if this is not useful to you, you can skip this step. It is not always trivial and is a common source of problems.
-With that said, below are instructions for various operating systems.</p>
-<h3 id="windows">Windows<a class="headerlink" href="#windows" title="Permanent link">&para;</a></h3>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>We assume a version of Windows 10 or higher, with a working version of Python 3.9 including pip installed. 
-We recommend installing PolarRoute into a virtual environment.</p>
-</div>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pipwin<span class="w"> </span><span class="c1"># pipwin is a package that allows for easy installation of windows binaries</span>
-pipwin<span class="w"> </span>install<span class="w"> </span>gdal
-pipwin<span class="w"> </span>install<span class="w"> </span>fiona
-</code></pre></div>
-<h3 id="linuxmacos">Linux/MacOS<a class="headerlink" href="#linuxmacos" title="Permanent link">&para;</a></h3>
-<p>Ubuntu/Debian:</p>
-<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>add-apt-repository<span class="w"> </span>ppa:ubuntugis/ppa
-sudo<span class="w"> </span>apt<span class="w"> </span>update
-sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>gdal-bin<span class="w"> </span>libgdal-dev
-<span class="nb">export</span><span class="w"> </span><span class="nv">CPLUS_INCLUDE_PATH</span><span class="o">=</span>/usr/include/gdal
-<span class="nb">export</span><span class="w"> </span><span class="nv">C_INCLUDE_PATH</span><span class="o">=</span>/usr/include/gdal
-pip<span class="w"> </span>install<span class="w"> </span><span class="nv">GDAL</span><span class="o">==</span><span class="k">$(</span>gdal-config<span class="w"> </span>--version<span class="k">)</span>
-</code></pre></div>
-<p>Fedora:</p>
-<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>dnf<span class="w"> </span>update
-sudo<span class="w"> </span>dnf<span class="w"> </span>install<span class="w"> </span>gdal<span class="w"> </span>gdal-devel
-<span class="nb">export</span><span class="w"> </span><span class="nv">CPLUS_INCLUDE_PATH</span><span class="o">=</span>/usr/include/gdal
-<span class="nb">export</span><span class="w"> </span><span class="nv">C_INCLUDE_PATH</span><span class="o">=</span>/usr/include/gdal
-pip<span class="w"> </span>install<span class="w"> </span><span class="nv">GDAL</span><span class="o">==</span><span class="k">$(</span>gdal-config<span class="w"> </span>--version<span class="k">)</span>
-</code></pre></div>
-<p>MacOS (with HomeBrew):</p>
-<div class="highlight"><pre><span></span><code>brew<span class="w"> </span>install<span class="w"> </span>gdal<span class="w"> </span>--HEAD
-brew<span class="w"> </span>install<span class="w"> </span>gdal
-pip<span class="w"> </span>install<span class="w"> </span><span class="nv">GDAL</span><span class="o">==</span><span class="k">$(</span>gdal-config<span class="w"> </span>--version<span class="k">)</span>
-</code></pre></div>
 
 
 
