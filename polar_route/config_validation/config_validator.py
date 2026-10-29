@@ -5,8 +5,42 @@ from polar_route.utils import json_str
 from polar_route.config_validation.vessel_schema import vessel_schema
 from polar_route.config_validation.route_schema import route_schema
 from polar_route.config_validation.waypoints_schema import waypoints_columns
+from polar_route.vessel_performance.models import (
+    ConsumptionModel,
+    ModelRegistry,
+    ResistanceModel,
+)
 
-    
+
+def _validate_model_spec(model_spec, expected_base, context):
+    """
+    Validate a single model spec (``{"type": ..., "params": ...}``) by attempting
+    to build it via the registry, so unknown model types, invalid parameters and
+    models placed in the wrong slot are caught at config-validation time rather
+    than at instantiation time.
+
+    Args:
+        model_spec (dict): Model spec with 'type' and 'params' keys.
+        expected_base (type): ResistanceModel or ConsumptionModel.
+        context (str): Human-readable location for error messages.
+
+    Raises:
+        ValidationError: If the model type is unknown, the params are invalid,
+            or the model is not a subclass of ``expected_base``.
+    """
+    model_type = model_spec["type"]
+    params = model_spec.get("params", {})
+    try:
+        model = ModelRegistry.create(model_type, params)
+    except (ValueError, TypeError) as e:
+        raise jsonschema.ValidationError(f"{context} ('{model_type}'): {e}") from e
+    if not isinstance(model, expected_base):
+        kind = "resistance" if expected_base is ResistanceModel else "consumption"
+        raise jsonschema.ValidationError(
+            f"{context} ('{model_type}'): '{model_type}' is not a {kind} model"
+        )
+
+
 def validate_vessel_config(config):
     """
     Validates a vessel config
@@ -25,8 +59,22 @@ def validate_vessel_config(config):
     """
     # Deals with flexible input
     config_json = json_str(config)
-    # Validate against schema
+    # Validate top-level structure against schema
     jsonschema.validate(instance=config_json, schema=vessel_schema)
+    # Validate per-model type names and params early by building each model
+    resistance_specs = config_json.get("resistance_models", [])
+    for spec in resistance_specs:
+        _validate_model_spec(spec, ResistanceModel, "Invalid resistance model")
+    _validate_model_spec(
+        config_json["consumption_model"], ConsumptionModel, "Invalid consumption model"
+    )
+    if "speed_adjustment" in config_json and not any(
+        spec["type"] == "ice_resistance" for spec in resistance_specs
+    ):
+        raise jsonschema.ValidationError(
+            "speed_adjustment requires an ice_resistance model, whose force_limit "
+            "sets the wind speed-reduction thresholds"
+        )
 
 def validate_route_config(config):
     """

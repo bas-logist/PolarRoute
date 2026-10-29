@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Model Registry System: Plugin-based architecture for resistance and consumption models using `@register_model` decorator. Registering a second class under an existing model name raises `ValueError`.
+- Generic Vessel Classes: Ship, Glider, AUV, and Aircraft classes replacing hard-coded vessel types.
+- Resistance Models: Three pluggable resistance models:
+  - `ice_resistance`: Froude number-based ice resistance with configurable k/b/n coefficients
+  - `wind_resistance`: Angle-dependent wind drag with interpolation options (linear/cubic/spline). `angles` and `coefficients` are checked for matching length and strictly increasing angles.
+  - `wave_resistance`: Kreitner wave resistance with beam/length/block coefficient parameters
+- Consumption Models: Three pluggable consumption models:
+  - `polynomial_fuel`: Speed and resistance-based fuel consumption with polynomial coefficients
+  - `polynomial_battery`: Speed and depth-based battery consumption for underwater vehicles
+  - `constant_consumption`: Fixed-rate consumption for simple vehicles
+- Configuration Validation: JSON schema validating vessel configuration structure. `validate_vessel_config` also builds each model, so unknown model types, invalid parameters, a model in the wrong slot (e.g. a consumption model under `resistance_models`) and `speed_adjustment` without an `ice_resistance` model are rejected at validation time.
+- `max_dive_depth` vessel config field for gliders (default 1000 m).
+- Documentation: 
+  - Vessel configuration gallery with ready-to-use examples (`docs/config/vessel_gallery.md`)
+  - Resistance models theory documentation (`docs/methods/resistance_models.md`)
+  - Complete model parameters reference (`docs/reference/model_parameters.md`)
+- Example Configurations: Updated vessel configs for SDA, SDA_wind, Slocum, and BoatyMcBoatFace using new format.
+- Unit Tests: Coverage for the model registry, resistance and consumption models, generic vessel classes, and the vessel factory.
+
+### Changed
+- Vessel Configuration Format (BREAKING): `vessel_type` replaced with `vessel_class` + explicit model specifications.
+- Configuration Structure (BREAKING): All vessel-specific parameters (beam, force_limit, etc.) now explicitly defined in model params rather than top-level.
+- Vessel config schema is now strict (BREAKING): `additionalProperties` is `false`, so unknown top-level or `speed_adjustment` keys are rejected instead of ignored.
+- Aircraft `max_elevation` renamed to `max_altitude` (BREAKING).
+- `num_directions` must be 8, matching the mesh neighbour directions used by the route planner.
+- Wind speed adjustment (`speed_adjustment`, previously the `SDAWind` vessel) uses the `ice_resistance` model's `force_limit` for its thresholds. Total `resistance`, and therefore `fuel`, is now evaluated at the wind-adjusted speed for each heading, where `SDAWind` used the resistance at the speed before adjustment. This changes fuel and resistance values for wind-affected cells relative to 1.2.0; `wind resistance` is still reported at the pre-adjustment speed.
+- VesselFactory: Simplified factory using VESSEL_CLASSES mapping instead of hard-coded requirements dictionary.
+- Physical Constants: Now configurable per model (`gravity`, `air_density`, `specific_weight_water`) with sensible defaults. `specific_weight_water` is in N/m³ (ρ·g), not kg/m³.
+- Model Composition: Vessels compose multiple resistance models; total resistance is sum of all active models.
+
+### Removed
+- Legacy Vessel Classes (BREAKING): Deleted 12 hard-coded vessel files:
+  - `SDA.py`, `SDA_wind.py`, `example_ship.py` (ships)
+  - `slocum.py` (gliders)
+  - `boatymcboatface.py` (AUVs)
+  - `twin_otter.py`, `windracer.py` (aircraft)
+  - `abstract_ship.py`, `abstract_glider.py`, `abstract_alr.py`, `abstract_plane.py`, `abstract_uav.py` (abstract classes)
+- Configuration Fields (BREAKING): 
+  - `vessel_type` (replaced by `vessel_class`)
+  - `hull_type` (slender/blunt distinction now encoded in k/b/n coefficients)
+  - Top-level `beam`, `force_limit` (now in resistance model params)
+  - `max_elevation` (replaced by `max_altitude`)
+
 ## [1.2.0] - 2026-10-29
 
 ### Added
