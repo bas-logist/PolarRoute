@@ -1,9 +1,8 @@
 import logging
 import json
 import numpy as np
-import geopandas as gpd
 from polar_route.route_planner.crossing import traveltime_in_cell
-from polar_route.utils import unit_time, unit_speed, case_from_angle
+from polar_route.utils import unit_time, unit_speed, case_from_angle, write_route_gpx
 from meshiphi.utils import longitude_domain
 
 # Module logger
@@ -124,14 +123,6 @@ class Route:
         # TODO Decide on an output format for this method or remove
         raise NotImplementedError
 
-    def to_gpx(self):
-        """
-        Converts the constructed route into a geo-dataframe with fields matching gpx format
-        """
-        route = self.to_json()
-        gdf = gpd.GeoDataFrame.from_features([route])
-        return gdf
-
     def save(self, file_path):
         """
         Saves the constructed route to the given file location in the given format
@@ -143,8 +134,7 @@ class Route:
             with open(file_path, "w") as f:
                 json.dump(self.to_geojson(), f)
         elif file_path_strs[-1] == "gpx":
-            gdf = self.to_gpx()
-            gdf["geometry"].to_file(file_path, "GPX")
+            write_route_gpx(self.to_json(), file_path)
         else:
             raise ValueError(
                 'Provide a path with a supported file extension: "json", "gpx"'
