@@ -66,7 +66,7 @@ The vessel configuration file provides all necessary information about a vessel'
 
 * **`min_depth`** *(float)* - Minimum water depth (m) required for vessel operation.
 
-* **`num_directions`** *(int)* - Number of discrete heading directions for route planning (typically 8 or 16).
+* **`num_directions`** *(int)* - Number of discrete heading directions. Must be `8`, matching the mesh neighbour directions used by the route planner. Default: `8`.
 
 * **`resistance_models`** *(array)* - Array of resistance model configurations. Can be empty `[]` for simple vessels. Each model has:
   - `type` *(string)* - Model identifier (see [Available Models](#available-models))
@@ -78,11 +78,18 @@ The vessel configuration file provides all necessary information about a vessel'
 
 ### Optional Parameters
 
-* **`max_depth`** *(float)* - Maximum operating depth (m). Required for gliders and AUVs.
+* **`max_dive_depth`** *(float)* - Gliders only. Operating depth (m) at which battery use is capped, assuming yo-yo dives. Default: `1000`.
+
+* **`max_altitude`** *(float)* - Aircraft only. Cells with elevation (m) above this are marked inaccessible. Replaces the legacy `max_elevation`.
 
 * **`max_wave`** *(float)* - Maximum significant wave height (m) the vessel can operate in.
 
 * **`excluded_zones`** *(array of strings)* - List of mesh cell property names. Cells with `True` values for any listed property are marked inaccessible.
+
+* **`speed_adjustment`** *(object)* - Ships only. Reduces speed per heading according to wind resistance, as in the legacy `SDAWind` vessel. Thresholds are fractions of the `ice_resistance` model's `force_limit`, so an `ice_resistance` model is required. Keys:
+  - `wind_threshold_low` *(float, 0-1)* - Headwind resistance below `wind_threshold_low × force_limit` scales speed by `1 - R_wind / force_limit`; at or above it, speed is multiplied by `speed_factor_low`. Default: `0.75`.
+  - `speed_factor_low` *(float, 0-1)* - Speed multiplier for strong headwinds. Default: `0.25`.
+  - `tailwind_factor` *(float, ≥1)* - Tailwinds (negative wind resistance) scale speed by `1 - R_wind / (tailwind_factor × force_limit)`. Default: `10`.
 
 * **`neighbour_splitting`** *(bool)* - Enable splitting of accessible cells neighboring inaccessible cells. Improves routing accuracy but increases computation time. Default: `true`.
 

@@ -14,7 +14,6 @@ Complete reference for all parameters used in vessel performance models.
 | `beam` | float | m | Yes | - | 10 - 50 | Vessel beam (width). Used in Froude number calculation and resistance scaling. |
 | `force_limit` | float | N | Yes | - | 5×10⁴ - 2×10⁵ | Maximum allowable resistance force. When exceeded, vessel speed is reduced for safety. |
 | `gravity` | float | m/s² | No | 9.81 | 9.80 - 9.82 | Gravitational acceleration. Can vary slightly with latitude. |
-| `rho_water` | float | N/m³ | No | 9807 | 9500 - 10000 | Water density factor (ρ×g). Varies with water salinity and temperature. |
 
 **Example:**
 ```json
@@ -37,8 +36,8 @@ Complete reference for all parameters used in vessel performance models.
 | `frontal_area` | float | m² | Yes | - | 100 - 2000 | Frontal area of vessel exposed to wind. Includes superstructure above waterline. |
 | `air_density` | float | kg/m³ | No | 1.225 | 1.0 - 1.3 | Air density. Varies with altitude, temperature, and humidity. Sea level standard: 1.225. |
 | `interpolation` | string | - | No | "linear" | See below | Method for interpolating drag coefficients between angles: `"linear"`, `"cubic"`, or `"spline"`. |
-| `angles` | array[float] | degrees | Yes | - | 0 - 180 | Wind angles relative to vessel heading. Must be sorted ascending. 0° = head wind, 180° = tail wind. |
-| `coefficients` | array[float] | dimensionless | Yes | - | -0.5 to 1.5 | Drag coefficients corresponding to each angle. Negative values indicate propulsive assistance (tail wind). |
+| `angles` | array[float] | degrees | Yes | - | 0 - 180 | Wind angles relative to vessel heading. Must be strictly increasing, with at least two entries (four for `"cubic"` or `"spline"`). 0° = head wind, 180° = tail wind. |
+| `coefficients` | array[float] | dimensionless | Yes | - | -0.5 to 1.5 | Drag coefficients corresponding to each angle; same length as `angles`. Negative values indicate propulsive assistance (tail wind). |
 
 **Example:**
 ```json
@@ -60,8 +59,8 @@ Complete reference for all parameters used in vessel performance models.
 |-----------|------|-------|----------|---------|-------|-------------|
 | `beam` | float | m | Yes | - | 10 - 50 | Vessel beam (width). Used in wave pattern calculations. |
 | `length` | float | m | Yes | - | 50 - 200 | Vessel length. Determines wave-making characteristics. |
-| `c_block` | float | dimensionless | Yes | - | 0.5 - 0.9 | Block coefficient. Ratio of displaced volume to (length × beam × draft). Lower = more streamlined. |
-| `rho_water` | float | N/m³ | No | 9807 | 9500 - 10000 | Water density factor (ρ×g). Varies with water salinity and temperature. |
+| `c_block` | float | dimensionless | No | 0.75 | 0.5 - 0.9 | Block coefficient. Ratio of displaced volume to (length × beam × draft). Lower = more streamlined. |
+| `specific_weight_water` | float | N/m³ | No | 9807 | 9500 - 10100 | Specific weight of water, ρ·g (not a density in kg/m³). Default is freshwater at 4 °C; seawater is about 10050. |
 
 **Example:**
 ```json
@@ -157,7 +156,7 @@ Default values for physical constants used across models. Can be overridden per-
 |----------|--------|---------|-------|-------------|
 | Gravitational acceleration | g | 9.81 | m/s² | Standard gravity |
 | Air density | ρ_air | 1.225 | kg/m³ | Standard atmosphere |
-| Water density factor | ρ_water | 9807 | N/m³ | Seawater |
+| Specific weight of water | γ_water = ρ·g | 9807 | N/m³ | Freshwater at 4 °C |
 
 ## See Also
 

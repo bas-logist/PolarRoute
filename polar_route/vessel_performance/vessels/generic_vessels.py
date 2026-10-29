@@ -9,6 +9,7 @@ import numpy as np
 import logging
 from polar_route.vessel_performance.abstract_vessel import AbstractVessel
 from polar_route.vessel_performance.models import ModelRegistry
+from polar_route.vessel_performance.models.resistance import IceResistance, WindResistance
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +27,12 @@ class Ship(AbstractVessel):
         unit (str): Speed unit (should be "km/hr")
         max_ice_conc (float): Maximum ice concentration accessible [%]
         min_depth (float): Minimum water depth required [m]
-        num_directions (int): Number of compass directions to model (default 8)
+        num_directions (int): Number of compass directions to model (must be 8, to
+            match the mesh neighbour directions used by the route planner)
         resistance_models (list): List of resistance model specs with 'type' and 'params'
         consumption_model (dict): Consumption model spec with 'type' and 'params'
-        speed_adjustment (dict, optional): Speed adjustment thresholds for wind effects
+        speed_adjustment (dict, optional): Wind speed-reduction settings; thresholds are
+            fractions of the ice_resistance model's force_limit, so an ice model is required
     """
     
     def __init__(self, params: dict):
@@ -59,6 +62,18 @@ class Ship(AbstractVessel):
             model = ModelRegistry.create(model_spec["type"], model_spec["params"])
             self.resistance_models.append(model)
             logger.info(f"Added resistance model: {model_spec['type']}")
+
+        self.ice_model = next(
+            (m for m in self.resistance_models if isinstance(m, IceResistance)), None
+        )
+        self.wind_model = next(
+            (m for m in self.resistance_models if isinstance(m, WindResistance)), None
+        )
+        if self.speed_adjustment is not None and self.ice_model is None:
+            raise ValueError(
+                "speed_adjustment requires an ice_resistance model, whose force_limit "
+                "sets the wind speed-reduction thresholds"
+            )
         
         # Initialize consumption model
         consumption_spec = params["consumption_model"]
@@ -111,6 +126,8 @@ class Ship(AbstractVessel):
     def _apply_speed_adjustment(self, speed: float, wind_resistance: float) -> float:
         """
         Apply speed adjustment based on wind resistance (legacy SDA_wind logic).
+
+        Thresholds are fractions of the ice model's ``force_limit`` [N].
         
         Args:
             speed (float): Base speed [km/h]
@@ -122,10 +139,8 @@ class Ship(AbstractVessel):
         if self.speed_adjustment is None:
             return speed
         
-        # Extract thresholds and factors from config
-        force_limit = self.vessel_params.get("force_limit", np.inf)
+        force_limit = self.ice_model.force_limit
         threshold_low = self.speed_adjustment.get("wind_threshold_low", 0.75)
-        threshold_high = self.speed_adjustment.get("wind_threshold_high", 1.0)
         factor_low = self.speed_adjustment.get("speed_factor_low", 0.25)
         tailwind_factor = self.speed_adjustment.get("tailwind_factor", 10.0)
         
@@ -165,8 +180,9 @@ class Ship(AbstractVessel):
         
         # Check ice accessibility and adjust speed if needed
         ice_resistance = None
-        if all(k in cellbox.agg_data for k in ("SIC", "thickness", "density")):
-            sic = cellbox.agg_data.get("SIC", 0.0)
+        ice_inaccessible = False
+        if all(cellbox.agg_data.get(k) is not None for k in ("SIC", "thickness", "density")):
+            sic = cellbox.agg_data["SIC"]
             
             if sic == 0.0:
                 # No ice: use max speed
@@ -176,23 +192,22 @@ class Ship(AbstractVessel):
                 # Too much ice: inaccessible
                 base_speed = 0.0
                 ice_resistance = np.inf
-            else:
+                ice_inaccessible = True
+            elif self.ice_model is not None:
                 # Calculate ice resistance at max speed
-                ice_model = next((m for m in self.resistance_models 
-                                if hasattr(m, 'force_limit')), None)
-                if ice_model:
-                    test_resistance = ice_model.calculate_resistance(
-                        cellbox, self.max_speed, 0.0
+                ice_model = self.ice_model
+                test_resistance = ice_model.calculate_resistance(
+                    cellbox, self.max_speed, 0.0
+                )
+                if test_resistance > ice_model.force_limit:
+                    # Ice resistance too high: reduce speed
+                    base_speed = ice_model.invert_resistance(cellbox)
+                    ice_resistance = ice_model.calculate_resistance(
+                        cellbox, base_speed, 0.0
                     )
-                    if test_resistance > ice_model.force_limit:
-                        # Ice resistance too high: reduce speed
-                        base_speed = ice_model.invert_resistance(cellbox)
-                        ice_resistance = ice_model.calculate_resistance(
-                            cellbox, base_speed, 0.0
-                        )
-                    else:
-                        base_speed = self.max_speed
-                        ice_resistance = test_resistance
+                else:
+                    base_speed = self.max_speed
+                    ice_resistance = test_resistance
         
         # Calculate performance for each direction
         headings = self._get_direction_headings()
@@ -207,20 +222,25 @@ class Ship(AbstractVessel):
         
         for i, heading in enumerate(headings):
             speed = base_speed
+
+            if ice_inaccessible:
+                # The ice model is singular at zero speed, so set the legacy values directly
+                speeds.append(speed)
+                resistances.append(np.inf)
+                fuels.append(self.consumption_model.calculate_consumption(speed, np.inf))
+                continue
             
             # Calculate total resistance at this heading
             resistance = self._calculate_resistance(cellbox, speed, heading)
             
             # Extract wind resistance component and wind data if wind model exists
-            for model in self.resistance_models:
-                if model.__class__.__name__ == "WindResistance":
-                    wind_resistances[i] = model.calculate_resistance(
-                        cellbox, speed, heading
-                    )
-                    # Also get apparent wind speed and angle
-                    relative_wind_speeds[i], relative_wind_angles[i] = model._calculate_apparent_wind(
-                        cellbox, speed, heading
-                    )
+            if self.wind_model is not None:
+                wind_resistances[i] = self.wind_model.calculate_resistance(
+                    cellbox, speed, heading
+                )
+                relative_wind_speeds[i], relative_wind_angles[i] = (
+                    self.wind_model.calculate_apparent_wind(cellbox, speed, heading)
+                )
             
             # Apply speed adjustment if configured
             if self.speed_adjustment:
@@ -317,8 +337,10 @@ class AUV(AbstractVessel):
         unit (str): Speed unit
         max_ice_conc (float): Maximum ice concentration accessible [%]
         min_depth (float): Minimum water depth required [m]
-        num_directions (int): Number of compass directions (default 8)
+        num_directions (int): Number of compass directions (must be 8)
         consumption_model (dict): Battery consumption model with 'type' and 'params'
+        max_dive_depth (float): Glider only; operating depth cap for battery use [m], default 1000
+        excluded_zones (list): Cell property names that make a cell inaccessible when True
     """
 
     #: Whether operating depth is capped at max_dive_depth (yo-yo dive assumption)
@@ -331,6 +353,7 @@ class AUV(AbstractVessel):
         self.max_ice = params.get("max_ice_conc", 100.0)
         self.min_depth = params.get("min_depth", 0.0)
         self.num_directions = params.get("num_directions", 8)
+        self.excluded_zones = params.get("excluded_zones", None)
         
         # Initialize consumption model
         consumption_spec = params["consumption_model"]
@@ -365,31 +388,37 @@ class AUV(AbstractVessel):
         }
     
     def model_accessibility(self, cellbox):
-        """Determine underwater-vehicle accessibility."""
-        access = {
-            "land": False,
-            "ext_ice": False,
-            "shallow": False,
-            "inaccessible": False
-        }
-        
+        """
+        Determine underwater-vehicle accessibility.
+
+        Returns dict with boolean flags:
+            - land: True if elevation >= 0
+            - shallow: True if water depth < min_depth
+            - ext_ice: True if ice concentration > max_ice_conc
+            - one flag per configured excluded zone
+            - inaccessible: True if any flag above is True
+        """
+        access = {"land": False, "shallow": False, "ext_ice": False}
+
         elevation = cellbox.agg_data.get("elevation", -100)
         if elevation >= 0:
             access["land"] = True
-            access["inaccessible"] = True
-            return access
-        
-        depth = abs(elevation)
-        if depth < self.min_depth:
+        elif abs(elevation) < self.min_depth:
             access["shallow"] = True
-            access["inaccessible"] = True
-            return access
-        
-        sic = cellbox.agg_data.get("SIC", 0.0)
-        if sic > self.max_ice:
+
+        sic = cellbox.agg_data.get("SIC")
+        if sic is not None and sic > self.max_ice:
             access["ext_ice"] = True
-            access["inaccessible"] = True
-        
+
+        if self.excluded_zones is not None:
+            for zone in self.excluded_zones:
+                try:
+                    access[zone] = cellbox.agg_data[zone]
+                except KeyError:
+                    logger.debug(f'{zone} not found in agg cellbox!')
+
+        access["inaccessible"] = any(access.values())
+
         return access
 
 
@@ -417,7 +446,7 @@ class Aircraft(AbstractVessel):
         max_speed (float): Maximum aircraft speed [km/h]
         unit (str): Speed unit
         max_ice_conc (float): Maximum ice concentration (usually ignored)
-        num_directions (int): Number of compass directions (default 8)
+        num_directions (int): Number of compass directions (must be 8)
         consumption_model (dict): Fuel consumption model (usually constant)
     """
     

@@ -46,6 +46,11 @@ vessel_schema = {
             "minimum": 0,
             "description": "Maximum altitude for aircraft [m]"
         },
+        "max_dive_depth": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Glider operating depth cap for battery use (yo-yo dive) [m], default 1000"
+        },
         "max_wave": {
             "type": "number",
             "minimum": 0,
@@ -53,9 +58,9 @@ vessel_schema = {
         },
         "num_directions": {
             "type": "integer",
-            "minimum": 4,
+            "enum": [8],
             "default": 8,
-            "description": "Number of compass directions to model (e.g., 4, 8, 16, 32). More directions increase computational cost."
+            "description": "Number of compass directions to model. Must be 8, matching the mesh neighbour directions used by the route planner."
         },
         "resistance_models": {
             "type": "array",
@@ -92,19 +97,14 @@ vessel_schema = {
         },
         "speed_adjustment": {
             "type": "object",
-            "description": "Optional wind-based speed adjustment thresholds (for SDA_wind-style behaviour)",
+            "additionalProperties": False,
+            "description": "Optional wind-based speed adjustment (for SDA_wind-style behaviour). Thresholds are fractions of the ice_resistance model's force_limit, so an ice_resistance model is required.",
             "properties": {
                 "wind_threshold_low": {
                     "type": "number",
                     "minimum": 0,
                     "maximum": 1,
-                    "description": "Lower wind resistance threshold as fraction of force_limit [dimensionless]"
-                },
-                "wind_threshold_high": {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 1,
-                    "description": "Upper wind resistance threshold as fraction of force_limit [dimensionless]"
+                    "description": "Wind resistance, as a fraction of force_limit, above which speed is cut to speed_factor_low [dimensionless]"
                 },
                 "speed_factor_low": {
                     "type": "number",

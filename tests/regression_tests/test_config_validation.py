@@ -109,6 +109,63 @@ def test_validate_vessel_config_no_extra_keys(valid_vessel_config):
         validate_vessel_config(config)
 
 
+@pytest.mark.parametrize(
+    "config_file",
+    ["SDA.config.json", "SDA_wind.config.json", "Slocum.config.json", "BoatyMcBoatFace.config.json"],
+)
+def test_validate_vessel_config_examples(config_file):
+    config = load_json_example(os.path.join(EXAMPLES_DIR, "vessel_config", config_file))
+    validate_vessel_config(config)
+
+
+@pytest.mark.parametrize("num_directions", [4, 16])
+def test_validate_vessel_config_rejects_num_directions_other_than_8(valid_vessel_config, num_directions):
+    config = valid_vessel_config.copy()
+    config["num_directions"] = num_directions
+    with pytest.raises(ValidationError, match="num_directions|8 was expected"):
+        validate_vessel_config(config)
+
+
+def test_validate_vessel_config_accepts_max_dive_depth(valid_vessel_config):
+    config = valid_vessel_config.copy()
+    config["vessel_class"] = "glider"
+    config["max_dive_depth"] = 500.0
+    validate_vessel_config(config)
+
+
+def test_validate_vessel_config_rejects_consumption_model_as_resistance(valid_vessel_config):
+    config = valid_vessel_config.copy()
+    config["resistance_models"] = [config["consumption_model"]]
+    with pytest.raises(ValidationError, match="not a resistance model"):
+        validate_vessel_config(config)
+
+
+def test_validate_vessel_config_rejects_resistance_model_as_consumption(valid_vessel_config):
+    config = valid_vessel_config.copy()
+    config["consumption_model"] = {
+        "type": "wave_resistance",
+        "params": {"beam": 24.0, "length": 129.0},
+    }
+    with pytest.raises(ValidationError, match="not a consumption model"):
+        validate_vessel_config(config)
+
+
+def test_validate_vessel_config_speed_adjustment_requires_ice_model(valid_vessel_config):
+    config = valid_vessel_config.copy()
+    config["speed_adjustment"] = {"wind_threshold_low": 0.75}
+    with pytest.raises(ValidationError, match="ice_resistance"):
+        validate_vessel_config(config)
+
+
+def test_validate_vessel_config_rejects_unknown_speed_adjustment_key(valid_vessel_config):
+    config = load_json_example(
+        os.path.join(EXAMPLES_DIR, "vessel_config", "SDA_wind.config.json")
+    )
+    config["speed_adjustment"]["wind_threshold_high"] = 1.0
+    with pytest.raises(ValidationError, match="wind_threshold_high"):
+        validate_vessel_config(config)
+
+
 # Route config validation testing
 def test_validate_route_config_file():
     """Test that the example route config file validates successfully."""

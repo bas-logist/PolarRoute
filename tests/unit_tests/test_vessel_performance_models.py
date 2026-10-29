@@ -17,7 +17,7 @@ from polar_route.vessel_performance.models.consumption import (
     PolynomialBatteryModel,
     ConstantConsumptionModel
 )
-from polar_route.vessel_performance.models import ModelRegistry
+from polar_route.vessel_performance.models import ModelRegistry, register_model
 from meshiphi.mesh_generation.aggregated_cellbox import AggregatedCellBox
 from meshiphi.mesh_generation.boundary import Boundary
 
@@ -130,6 +130,33 @@ class TestWindResistance:
         )
         assert resistance < 0.0
 
+    @pytest.mark.parametrize(
+        "angles, coefficients, interpolation, match",
+        [
+            ([0, 90, 180], [1.0, 0.5], "linear", "same length"),
+            ([0], [1.0], "linear", "at least two"),
+            ([0, 90, 60, 180], [1.0, 0.5, 0.4, 0.0], "linear", "strictly increasing"),
+            ([0, 90, 180], [1.0, 0.5, 0.0], "quadratic", "Unknown interpolation"),
+        ],
+    )
+    def test_wind_invalid_params_raise(self, angles, coefficients, interpolation, match):
+        with pytest.raises(ValueError, match=match):
+            WindResistance(
+                frontal_area=750.0, angles=angles,
+                coefficients=coefficients, interpolation=interpolation,
+            )
+
+    @pytest.mark.parametrize("interpolation", ["linear", "cubic", "spline"])
+    def test_wind_drag_coefficient_matches_breakpoints(self, interpolation):
+        angles = [0, 30, 60, 90, 120, 150, 180]
+        coefficients = [0.94, 0.77, 0.42, 0.48, 0.17, -0.30, -0.34]
+        model = WindResistance(
+            frontal_area=750.0, angles=angles,
+            coefficients=coefficients, interpolation=interpolation,
+        )
+        for angle_deg, coefficient in zip(angles, coefficients):
+            assert model._get_drag_coefficient(np.deg2rad(angle_deg)) == pytest.approx(coefficient)
+
 
 class TestWaveResistance:
     """Test Kreitner wave resistance model."""
@@ -138,7 +165,7 @@ class TestWaveResistance:
     def wave_model(self):
         """Create wave resistance model."""
         return WaveResistance(
-            beam=24.0, length=129.0, c_block=0.75, rho_water=9807
+            beam=24.0, length=129.0, c_block=0.75, specific_weight_water=9807
         )
     
     def test_no_waves_gives_zero_resistance(self, wave_model):
@@ -277,6 +304,17 @@ class TestModelRegistry:
         """Test that unknown model name raises ValueError."""
         with pytest.raises(ValueError, match="Unknown model type"):
             ModelRegistry.create("nonexistent_model", {})
+
+    def test_register_duplicate_name_raises_error(self):
+        with pytest.raises(ValueError, match="already registered"):
+            @register_model("ice_resistance")
+            class DuplicateIce(IceResistance):
+                pass
+
+        assert ModelRegistry.create("ice_resistance", {
+            "k": 4.4, "b": -0.8267, "n": 2.0,
+            "beam": 24.0, "force_limit": 96634.5
+        }).__class__ is IceResistance
 
 
 if __name__ == "__main__":

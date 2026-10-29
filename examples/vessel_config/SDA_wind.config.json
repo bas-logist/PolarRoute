@@ -37,7 +37,6 @@
   },
   "speed_adjustment": {
     "wind_threshold_low": 0.75,
-    "wind_threshold_high": 1.0,
     "speed_factor_low": 0.25,
     "tailwind_factor": 10.0
   }

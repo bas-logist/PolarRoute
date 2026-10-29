@@ -7,6 +7,8 @@ test_vessel_performance_models.py.
 
 import pytest
 import json
+import numpy as np
+from polar_route.vessel_performance.models.resistance import WindResistance
 from polar_route.vessel_performance.vessels.generic_vessels import Ship, Glider, AUV, Aircraft
 from polar_route.vessel_performance.vessel_factory import VesselFactory
 
@@ -76,6 +78,68 @@ class TestShip:
         access = ship.model_accessibility(water_cellbox)
         assert access["inaccessible"] is False
 
+    def test_ship_inaccessible_ice_gives_infinite_resistance_and_fuel(self, ship_config):
+        ship = Ship(ship_config)
+        cellbox = MockCellbox({"SIC": 95.0, "thickness": 1.0, "density": 900.0})
+        performance = ship.model_performance(cellbox)
+
+        assert performance["speed"] == [0.0] * 8
+        assert performance["resistance"] == [np.inf] * 8
+        assert performance["fuel"] == [np.inf] * 8
+
+    def test_ship_none_ice_data_is_skipped(self, ship_config):
+        ship = Ship(ship_config)
+        cellbox = MockCellbox({"SIC": None, "thickness": None, "density": None})
+        performance = ship.model_performance(cellbox)
+
+        assert performance["speed"] == [ship.max_speed] * 8
+        assert "ice resistance" not in performance
+
+
+class TestShipSpeedAdjustment:
+    """Wind-based speed adjustment, ported from the legacy SDA_wind vessel."""
+
+    @pytest.fixture
+    def wind_ship_config(self):
+        with open('examples/vessel_config/SDA_wind.config.json', 'r') as f:
+            return json.load(f)
+
+    @staticmethod
+    def _wind_resistance_ne(ship, cellbox):
+        wind_model = next(
+            m for m in ship.resistance_models if isinstance(m, WindResistance)
+        )
+        return wind_model.calculate_resistance(cellbox, ship.max_speed, np.pi / 4)
+
+    def test_speed_adjustment_strong_headwind_quarters_speed(self, wind_ship_config):
+        ship = Ship(wind_ship_config)
+        # Wind blowing towards the SW, i.e. from the NE: a headwind on the first (NE) heading
+        cellbox = MockCellbox({"u10": -30.0, "v10": -30.0})
+        assert self._wind_resistance_ne(ship, cellbox) > 0.75 * 96634.5
+
+        performance = ship.model_performance(cellbox)
+
+        assert performance["speed"][0] == pytest.approx(ship.max_speed * 0.25)
+
+    def test_speed_adjustment_moderate_headwind_scales_speed(self, wind_ship_config):
+        ship = Ship(wind_ship_config)
+        cellbox = MockCellbox({"u10": -3.0, "v10": -3.0})
+        wind_resistance = self._wind_resistance_ne(ship, cellbox)
+        assert 0 < wind_resistance < 0.75 * 96634.5
+
+        performance = ship.model_performance(cellbox)
+
+        expected = ship.max_speed * (1 - wind_resistance / 96634.5)
+        assert performance["speed"][0] == pytest.approx(expected)
+
+    def test_speed_adjustment_without_ice_model_raises(self, wind_ship_config):
+        wind_ship_config["resistance_models"] = [
+            m for m in wind_ship_config["resistance_models"]
+            if m["type"] != "ice_resistance"
+        ]
+        with pytest.raises(ValueError, match="speed_adjustment requires an ice_resistance"):
+            Ship(wind_ship_config)
+
 
 class TestGlider:
     """Tests for generic Glider class."""
@@ -102,6 +166,23 @@ class TestGlider:
         assert "battery" in performance
         assert len(performance["speed"]) == 8
         assert len(performance["battery"]) == 8
+
+    def test_glider_excluded_zone_is_inaccessible(self, glider_config):
+        glider_config["excluded_zones"] = ["marine_protected_area"]
+        glider = Glider(glider_config)
+        cellbox = MockCellbox({"elevation": -500.0, "marine_protected_area": True})
+        access = glider.model_accessibility(cellbox)
+
+        assert access["marine_protected_area"] is True
+        assert access["inaccessible"] is True
+
+    def test_glider_none_sic_is_accessible(self, glider_config):
+        glider = Glider(glider_config)
+        cellbox = MockCellbox({"elevation": -500.0, "SIC": None})
+        access = glider.model_accessibility(cellbox)
+
+        assert access["ext_ice"] is False
+        assert access["inaccessible"] is False
 
 
 # ============================================================================

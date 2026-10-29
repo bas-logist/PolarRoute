@@ -5,19 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - YYYY-MM-DD
+## [Unreleased]
 
-- Model Registry System: Plugin-based architecture for resistance and consumption models using `@register_model` decorator.
+### Added
+- Model Registry System: Plugin-based architecture for resistance and consumption models using `@register_model` decorator. Registering a second class under an existing model name raises `ValueError`.
 - Generic Vessel Classes: Ship, Glider, AUV, and Aircraft classes replacing hard-coded vessel types.
 - Resistance Models: Three pluggable resistance models:
   - `ice_resistance`: Froude number-based ice resistance with configurable k/b/n coefficients
-  - `wind_resistance`: Angle-dependent wind drag with interpolation options (linear/cubic/spline)
+  - `wind_resistance`: Angle-dependent wind drag with interpolation options (linear/cubic/spline). `angles` and `coefficients` are checked for matching length and strictly increasing angles.
   - `wave_resistance`: Kreitner wave resistance with beam/length/block coefficient parameters
 - Consumption Models: Three pluggable consumption models:
   - `polynomial_fuel`: Speed and resistance-based fuel consumption with polynomial coefficients
   - `polynomial_battery`: Speed and depth-based battery consumption for underwater vehicles
   - `constant_consumption`: Fixed-rate consumption for simple vehicles
-- Configuration Validation: JSON schema validating vessel configuration structure; per-model parameters are validated by the model constructors at instantiation time.
+- Configuration Validation: JSON schema validating vessel configuration structure. `validate_vessel_config` also builds each model, so unknown model types, invalid parameters, a model in the wrong slot (e.g. a consumption model under `resistance_models`) and `speed_adjustment` without an `ice_resistance` model are rejected at validation time.
+- `max_dive_depth` vessel config field for gliders (default 1000 m).
 - Documentation: 
   - Vessel configuration gallery with ready-to-use examples (`docs/config/vessel_gallery.md`)
   - Resistance models theory documentation (`docs/methods/resistance_models.md`)
@@ -26,15 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit Tests: Coverage for the model registry, resistance and consumption models, generic vessel classes, and the vessel factory.
 
 ### Changed
-- Vessel Configuration Format: `vessel_type` replaced with `vessel_class` + explicit model specifications.
-- Configuration Structure: All vessel-specific parameters (beam, force_limit, etc.) now explicitly defined in model params rather than top-level.
+- Vessel Configuration Format (BREAKING): `vessel_type` replaced with `vessel_class` + explicit model specifications.
+- Configuration Structure (BREAKING): All vessel-specific parameters (beam, force_limit, etc.) now explicitly defined in model params rather than top-level.
+- Vessel config schema is now strict (BREAKING): `additionalProperties` is `false`, so unknown top-level or `speed_adjustment` keys are rejected instead of ignored.
+- Aircraft `max_elevation` renamed to `max_altitude` (BREAKING).
+- `num_directions` must be 8, matching the mesh neighbour directions used by the route planner.
+- Wind speed adjustment (`speed_adjustment`, previously the `SDAWind` vessel) uses the `ice_resistance` model's `force_limit` for its thresholds. Total `resistance`, and therefore `fuel`, is now evaluated at the wind-adjusted speed for each heading, where `SDAWind` used the resistance at the speed before adjustment. This changes fuel and resistance values for wind-affected cells relative to 1.2.0; `wind resistance` is still reported at the pre-adjustment speed.
 - VesselFactory: Simplified factory using VESSEL_CLASSES mapping instead of hard-coded requirements dictionary.
-- Physical Constants: Now configurable per-vessel (gravity, air_density, rho_water) with sensible defaults.
+- Physical Constants: Now configurable per model (`gravity`, `air_density`, `specific_weight_water`) with sensible defaults. `specific_weight_water` is in N/m³ (ρ·g), not kg/m³.
 - Model Composition: Vessels compose multiple resistance models; total resistance is sum of all active models.
-- Declare dependencies in `pyproject.toml` instead of `requirements.txt` and remove `requirements.txt`.
-- Adjust `pip install -e .[dev]` command in CONTRIBUTING.md to use the `dev` dependency group.
-- `route_calc()` can now accept a route as a GeoJSON in addition to a DataFrame.
-- Extracted geojson-to-DataFrame parsing in `load_route()` into a shared `route_geojson_to_df()` helper, reused by both the json and gpx.
 
 ### Removed
 - Legacy Vessel Classes (BREAKING): Deleted 12 hard-coded vessel files:
@@ -47,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `vessel_type` (replaced by `vessel_class`)
   - `hull_type` (slender/blunt distinction now encoded in k/b/n coefficients)
   - Top-level `beam`, `force_limit` (now in resistance model params)
+  - `max_elevation` (replaced by `max_altitude`)
 
 ## [1.2.0] - 2026-10-29
 

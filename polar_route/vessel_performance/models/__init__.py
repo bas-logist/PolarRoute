@@ -88,10 +88,16 @@ def register_model(name: str):
     
     Args:
         name (str): Unique identifier for the model (used in config files)
+
+    Raises:
+        ValueError: If a different class is already registered under ``name``
     """
     def decorator(cls):
-        if name in _MODEL_REGISTRY:
-            logger.warning(f"Model '{name}' already registered, overwriting")
+        existing = _MODEL_REGISTRY.get(name)
+        if existing is not None and existing is not cls:
+            raise ValueError(
+                f"Model '{name}' is already registered to {existing.__name__}"
+            )
         _MODEL_REGISTRY[name] = cls
         logger.debug(f"Registered model: {name} -> {cls.__name__}")
         return cls
@@ -126,7 +132,7 @@ class ModelRegistry:
             )
         
         model_class = _MODEL_REGISTRY[model_name]
-        logger.info(f"Creating model '{model_name}' with params: {params}")
+        logger.debug(f"Creating model '{model_name}' with params: {params}")
         return model_class(**params)
     
     @staticmethod

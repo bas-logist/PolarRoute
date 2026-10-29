@@ -93,7 +93,6 @@ Same vessel with additional speed adjustment for strong wind conditions.
   },
   "speed_adjustment": {
     "wind_threshold_low": 0.75,
-    "wind_threshold_high": 1.0,
     "speed_factor_low": 0.25,
     "tailwind_factor": 10.0
   }
@@ -135,7 +134,7 @@ Simplified glider configuration for shallow-water operations.
   "unit": "km/hr",
   "max_ice_conc": 80,
   "min_depth": 10,
-  "max_depth": 200,
+  "max_dive_depth": 200,
   "num_directions": 8,
   "resistance_models": [],
   "consumption_model": {
@@ -182,7 +181,6 @@ High-performance AUV for extreme depths.
   "unit": "km/hr",
   "max_ice_conc": 100,
   "min_depth": 10,
-  "max_depth": 6000,
   "num_directions": 8,
   "resistance_models": [],
   "consumption_model": {
@@ -207,7 +205,7 @@ Fixed-wing aircraft with constant consumption.
   "unit": "km/hr",
   "max_ice_conc": 100,
   "min_depth": 0,
-  "num_directions": 16,
+  "num_directions": 8,
   "resistance_models": [],
   "consumption_model": {
     "type": "constant_consumption",
@@ -229,7 +227,7 @@ Unmanned aerial vehicle optimised for extended missions.
   "unit": "km/hr",
   "max_ice_conc": 100,
   "min_depth": 0,
-  "num_directions": 16,
+  "num_directions": 8,
   "resistance_models": [],
   "consumption_model": {
     "type": "constant_consumption",
@@ -348,7 +346,6 @@ For vessels significantly affected by wind, add `speed_adjustment`:
 ```json
 "speed_adjustment": {
   "wind_threshold_low": 0.75,
-  "wind_threshold_high": 1.0,
   "speed_factor_low": 0.25,
   "tailwind_factor": 10.0
 }

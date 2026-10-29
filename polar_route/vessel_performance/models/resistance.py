@@ -141,14 +141,36 @@ class WindResistance(ResistanceModel):
     
     Parameters:
         frontal_area (float): Vessel frontal area exposed to wind [m²]
-        angles (list): Wind angle breakpoints [degrees], e.g., [0, 30, 60, 90, 120, 150, 180]
-        coefficients (list): Drag coefficients at each angle [dimensionless]
-        interpolation (str): Interpolation method ('linear', 'cubic', 'spline'), default 'linear'
+        angles (list): Wind angle breakpoints [degrees], strictly increasing, e.g., [0, 30, 60, 90, 120, 150, 180]
+        coefficients (list): Drag coefficients at each angle [dimensionless], same length as ``angles``
+        interpolation (str): Interpolation method ('linear', 'cubic', 'spline'), default 'linear'.
+            'cubic' and 'spline' need at least four breakpoints.
         air_density (float): Air density [kg/m³], default 1.225
+
+    Raises:
+        ValueError: If ``angles`` and ``coefficients`` differ in length, have fewer than
+            two entries, ``angles`` is not strictly increasing, or ``interpolation`` is unknown
     """
-    
+
+    INTERPOLATIONS = ("linear", "cubic", "spline")
+
     def __init__(self, frontal_area: float, angles: list, coefficients: list,
                  interpolation: str = "linear", air_density: float = 1.225):
+        if len(angles) != len(coefficients):
+            raise ValueError(
+                f"angles and coefficients must be the same length, "
+                f"got {len(angles)} and {len(coefficients)}"
+            )
+        if len(angles) < 2:
+            raise ValueError("angles and coefficients need at least two breakpoints")
+        if np.any(np.diff(angles) <= 0):
+            raise ValueError(f"angles must be strictly increasing, got {angles}")
+        if interpolation not in self.INTERPOLATIONS:
+            raise ValueError(
+                f"Unknown interpolation '{interpolation}', "
+                f"expected one of {self.INTERPOLATIONS}"
+            )
+
         self.frontal_area = frontal_area
         self.air_density = air_density
         self.interpolation = interpolation
@@ -156,6 +178,20 @@ class WindResistance(ResistanceModel):
         # Convert angles from degrees to radians
         self.angles_rad = np.array(angles) * (np.pi / 180.0)
         self.coefficients = np.array(coefficients)
+
+        # Build the interpolator once; scipy raises ValueError if there are too few points
+        if interpolation == "cubic":
+            from scipy.interpolate import interp1d
+            self._interpolator = interp1d(
+                self.angles_rad, self.coefficients, kind="cubic", fill_value="extrapolate"
+            )
+        elif interpolation == "spline":
+            from scipy.interpolate import UnivariateSpline
+            self._interpolator = UnivariateSpline(
+                self.angles_rad, self.coefficients, k=3, s=0
+            )
+        else:
+            self._interpolator = None
         
         logger.debug(
             f"Initialized WindResistance: frontal_area={frontal_area}m², "
@@ -172,22 +208,11 @@ class WindResistance(ResistanceModel):
         Returns:
             float: Drag coefficient [dimensionless]
         """
-        if self.interpolation == "linear":
+        if self._interpolator is None:
             return np.interp(rel_angle, self.angles_rad, self.coefficients)
-        elif self.interpolation == "cubic":
-            from scipy.interpolate import interp1d
-            f = interp1d(self.angles_rad, self.coefficients, kind='cubic', 
-                        fill_value="extrapolate")
-            return float(f(rel_angle))
-        elif self.interpolation == "spline":
-            from scipy.interpolate import UnivariateSpline
-            spl = UnivariateSpline(self.angles_rad, self.coefficients, k=3, s=0)
-            return float(spl(rel_angle))
-        else:
-            logger.warning(f"Unknown interpolation '{self.interpolation}', using linear")
-            return np.interp(rel_angle, self.angles_rad, self.coefficients)
+        return float(self._interpolator(rel_angle))
     
-    def _calculate_apparent_wind(self, cellbox, vessel_speed: float, heading: float):
+    def calculate_apparent_wind(self, cellbox, vessel_speed: float, heading: float):
         """
         Calculate apparent wind speed and direction.
         
@@ -256,7 +281,7 @@ class WindResistance(ResistanceModel):
             return 0.0
         
         # Calculate apparent wind
-        wind_speed, rel_angle = self._calculate_apparent_wind(cellbox, speed, direction)
+        wind_speed, rel_angle = self.calculate_apparent_wind(cellbox, speed, direction)
         
         # Get drag coefficients
         c_d_rel = self._get_drag_coefficient(rel_angle)
@@ -288,19 +313,20 @@ class WaveResistance(ResistanceModel):
         beam (float): Vessel beam width [m]
         length (float): Vessel length [m]
         c_block (float): Block coefficient (ratio of underwater volume to cuboid) [dimensionless], default 0.75
-        rho_water (float): Specific weight of water [N/m³], default 9807 (freshwater at 4°C)
+        specific_weight_water (float): Specific weight of water, ρ·g [N/m³], default 9807
+            (freshwater at 4°C). This is not a density in kg/m³.
     """
     
     def __init__(self, beam: float, length: float, c_block: float = 0.75, 
-                 rho_water: float = 9807):
+                 specific_weight_water: float = 9807):
         self.beam = beam
         self.length = length
         self.c_block = c_block
-        self.rho_water = rho_water
+        self.specific_weight_water = specific_weight_water
         
         logger.debug(
             f"Initialized WaveResistance: beam={beam}m, length={length}m, "
-            f"c_block={c_block}, rho_water={rho_water}N/m³"
+            f"c_block={c_block}, specific_weight_water={specific_weight_water}N/m³"
         )
     
     def calculate_resistance(self, cellbox, speed: float, direction: float = None) -> float:
@@ -328,12 +354,12 @@ class WaveResistance(ResistanceModel):
         # Get significant wave height
         wave_height = cellbox.agg_data.get("swh", 0.0)
         
-        if wave_height == 0:
+        if not wave_height:
             return 0.0
         
         # Kreitner formula (valid up to ~2m wave height)
         resistance = (
-            0.64 * self.rho_water * self.c_block * (wave_height ** 2) 
+            0.64 * self.specific_weight_water * self.c_block * (wave_height ** 2) 
             * (self.beam ** 2)
         ) / self.length
         

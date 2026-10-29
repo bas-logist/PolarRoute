@@ -15,6 +15,7 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from polar_route.utils import round_to_sigfig
 from polar_route.route_planner.route_planner import RoutePlanner
@@ -307,17 +308,17 @@ def compare_cellbox_values(mesh_a: Dict, mesh_b: Dict) -> None:
     df_a = df_a.loc[common_bounds].drop(columns=["id"])
     df_b = df_b.loc[common_bounds].drop(columns=["id"])
 
-    # Find common columns only (exclude columns that only appear in one dataframe)
-    common_cols = df_a.columns.intersection(df_b.columns)
-    
-    # Log which columns are being compared vs excluded
-    excluded_a = set(df_a.columns) - set(common_cols)
-    excluded_b = set(df_b.columns) - set(common_cols)
-    if excluded_a or excluded_b:
-        LOGGER.debug(f"Comparing only common columns. Excluded from old: {excluded_a}, from new: {excluded_b}")
-    
-    df_a = df_a[common_cols]
-    df_b = df_b[common_cols]
+    # Column sets must match: a column present in only some cellboxes is missed by
+    # compare_cellbox_attributes, which looks at the first cellbox only
+    missing_from_a, missing_from_b = _compare_set_difference(
+        set(df_a.columns), set(df_b.columns)
+    )
+    if missing_from_a or missing_from_b:
+        pytest.fail(
+            f"Mismatch in cellbox columns. New: {missing_from_a}, Missing: {missing_from_b}"
+        )
+    # DataFrame.compare needs identical column order
+    df_b = df_b[df_a.columns]
 
     # Round float values and floats in lists
     for df in [df_a, df_b]:
@@ -356,9 +357,9 @@ def compare_cellbox_values(mesh_a: Dict, mesh_b: Dict) -> None:
             if col in diff_samples:
                 error_msg += f"    Sample: {diff_samples[col][:2]}\n"
         
-        error_msg += f"\nTo see full differences, check the test output or inspect the meshes directly."
+        error_msg += "\nTo see full differences, check the test output or inspect the meshes directly."
         
-        assert False, error_msg
+        pytest.fail(error_msg)
 
 
 def compare_cellbox_attributes(mesh_a: Dict, mesh_b: Dict) -> None:
