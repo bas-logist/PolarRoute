@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+* Migrated docs builder from mkdocs to properdocs.
+
 ## [1.2.0] - 2026-10-29
 
 ### Added

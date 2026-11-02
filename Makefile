@@ -40,7 +40,7 @@ clean:  ## Clean build artifacts and cache
 	@echo "Clean complete."
 
 docs:  ## Build documentation
-	mkdocs build
+	properdocs build
 	@echo "Documentation built in site/"
 
 docs-clean:  ## Clean documentation build artifacts
