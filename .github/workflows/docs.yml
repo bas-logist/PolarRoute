@@ -30,7 +30,7 @@ jobs:
           pip install .
           pip install --group docs
       - name: Build docs 📖
-        run: mkdocs build
+        run: properdocs build
       - name: Deploy docs 🚀
         if: ${{ github.event_name == 'push' }}
         uses: JamesIves/github-pages-deploy-action@v4

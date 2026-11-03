@@ -79,11 +79,11 @@ dev = [
     "pre-commit",
 ]
 docs = [
-    "mkdocs",
+    "properdocs",
     "mkdocs-autoapi",
     "mkdocs-include-markdown-plugin",
     "mkdocstrings[python]",
-    "mkdocs-material",
+    "mkdocs-materialx",
 ]
 test = [
     "pytest",
