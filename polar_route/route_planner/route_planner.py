@@ -871,9 +871,8 @@ class RoutePlanner:
         geojson = {}
         smoothed_routes = []
 
-        mesh_json = self.env_mesh.to_json()
-        neighbour_graph = mesh_json["neighbour_graph"]
-        cellboxes = mesh_json["cellboxes"]
+        neighbour_graph = self.env_mesh.neighbour_graph.neighbour_graph
+        cellboxes = self.env_mesh.agg_cellboxes
 
         for route in routes:
             route_json = route.to_json(route_type="dijkstra")
@@ -1004,11 +1003,11 @@ class RoutePlanner:
         """
         dijkstra_graph_dict = dict()
         for cell in cellboxes:
-            if cell["inaccessible"]:
+            if cell.agg_data["inaccessible"]:
                 continue
-            cell_id = int(cell["id"])
-            dijkstra_graph_dict[cell_id] = cell
-            if "SIC" not in cell:
+            cell_id = cell.id
+            dijkstra_graph_dict[cell_id] = cell.to_json()
+            if "SIC" not in cell.agg_data:
                 dijkstra_graph_dict[cell_id]["SIC"] = 0.0
             dijkstra_graph_dict[cell_id]["id"] = cell_id
             dijkstra_graph_dict[cell_id]["Vector_x"] = dijkstra_graph_dict[cell_id][
