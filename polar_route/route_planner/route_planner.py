@@ -118,7 +118,7 @@ def flatten_cases(cell_id, neighbour_graph):
     Identifies the cases with neighbours around a given cell and gets the ids of those neighbouring cells.
 
     Args:
-        cell_id (str): The id of the cell to find the neighbours for
+        cell_id (int): The id of the cell to find the neighbours for
         neighbour_graph(dict): The neighbour graph of the mesh
 
     Returns:
@@ -130,8 +130,8 @@ def flatten_cases(cell_id, neighbour_graph):
     neighbours = neighbour_graph[cell_id]
     for case in neighbours.keys():
         for neighbour in neighbours[case]:
-            neighbour_case.append(int(case))
-            neighbour_indx.append(int(neighbour))
+            neighbour_case.append(case)
+            neighbour_indx.append(neighbour)
     return neighbour_case, neighbour_indx
 
 
@@ -305,7 +305,7 @@ class RoutePlanner:
         self.env_mesh = EnvironmentMesh.load_from_json(mesh_json)
 
         self.cellboxes_lookup = {
-            str(self.env_mesh.agg_cellboxes[i].get_id()): self.env_mesh.agg_cellboxes[i]
+            self.env_mesh.agg_cellboxes[i].get_id(): self.env_mesh.agg_cellboxes[i]
             for i in range(len(self.env_mesh.agg_cellboxes))
         }
 
@@ -388,9 +388,7 @@ class RoutePlanner:
             self._required_nodes += list(set(new_cells) - set(prior_cells))
             self.env_mesh = EnvironmentMesh.load_from_json(self.env_mesh.to_json())
             self.cellboxes_lookup = {
-                str(
-                    self.env_mesh.agg_cellboxes[i].get_id()
-                ): self.env_mesh.agg_cellboxes[i]
+                self.env_mesh.agg_cellboxes[i].get_id(): self.env_mesh.agg_cellboxes[i]
                 for i in range(len(self.env_mesh.agg_cellboxes))
             }
 
@@ -585,7 +583,7 @@ class RoutePlanner:
                 source_wp (SourceWaypoint): the SourceWaypoint object corresponding to the initial location
 
             Returns:
-                cellbox_indx (str): the index of the minimum cost unvisited cell from the routing table
+                cellbox_indx (int): the index of the minimum cost unvisited cell from the routing table
             """
             min_obj = np.inf
             cellbox_indx = -1
@@ -598,7 +596,7 @@ class RoutePlanner:
                     min_obj = source_wp.get_obj(
                         node_id, self.config["objective_function"]
                     )
-                    cellbox_indx = str(node_id)
+                    cellbox_indx = node_id
             return cellbox_indx
 
         def consider_neighbours(source_wp, _id):
@@ -606,7 +604,7 @@ class RoutePlanner:
             Get neighbours of the cell at the input index and update the routing table of the source waypoint
             Args:
                 source_wp (SourceWaypoint): the relevant source waypoint
-                _id (str): index of the cell to get the neighbours for
+                _id (int): index of the cell to get the neighbours for
 
             """
             neighbour_map = self.env_mesh.neighbour_graph.get_neighbour_map(
@@ -615,7 +613,7 @@ class RoutePlanner:
             for case, neighbours in neighbour_map.items():
                 if neighbours:
                     for neighbour in neighbours:
-                        edges = self._neighbour_cost(_id, str(neighbour), int(case))
+                        edges = self._neighbour_cost(_id, neighbour, int(case))
                         edges_cost = sum(
                             segment.get_variable(self.config["objective_function"])
                             for segment in edges
@@ -625,10 +623,10 @@ class RoutePlanner:
                             + edges_cost
                         )
                         if new_cost < source_wp.get_obj(
-                            str(neighbour), self.config["objective_function"]
+                            neighbour, self.config["objective_function"]
                         ):
                             source_wp.update_routing_table(
-                                str(neighbour), RoutingInfo(_id, edges)
+                                neighbour, RoutingInfo(_id, edges)
                             )
 
         if not self.config["early_stopping_criterion"]:
@@ -661,8 +659,8 @@ class RoutePlanner:
         specified case.
 
         Args:
-            node_id (str): the id of the initial cellbox
-            neighbour_id (str): the id of the neighbouring cellbox
+            node_id (int): the id of the initial cellbox
+            neighbour_id (int): the id of the neighbouring cellbox
             case (int): the case of the transition from node_id to neighbour_id
 
         Returns:
@@ -683,7 +681,7 @@ class RoutePlanner:
         # Save travel time and crossing point values for use in smoothing
 
         if not math.isnan(traveltime[0]) and not math.isnan(traveltime[1]):
-            self.neighbour_legs[node_id + "to" + neighbour_id] = (
+            self.neighbour_legs[f"{node_id} to {neighbour_id}"] = (
                 traveltime,
                 crossing_points,
             )
@@ -873,9 +871,8 @@ class RoutePlanner:
         geojson = {}
         smoothed_routes = []
 
-        mesh_json = self.env_mesh.to_json()
-        neighbour_graph = mesh_json["neighbour_graph"]
-        cellboxes = mesh_json["cellboxes"]
+        neighbour_graph = self.env_mesh.neighbour_graph.neighbour_graph
+        cellboxes = self.env_mesh.agg_cellboxes
 
         for route in routes:
             route_json = route.to_json(route_type="dijkstra")
@@ -1006,11 +1003,11 @@ class RoutePlanner:
         """
         dijkstra_graph_dict = dict()
         for cell in cellboxes:
-            if cell["inaccessible"]:
+            if cell.agg_data["inaccessible"]:
                 continue
-            cell_id = int(cell["id"])
-            dijkstra_graph_dict[cell_id] = cell
-            if "SIC" not in cell:
+            cell_id = cell.id
+            dijkstra_graph_dict[cell_id] = cell.to_json()
+            if "SIC" not in cell.agg_data:
                 dijkstra_graph_dict[cell_id]["SIC"] = 0.0
             dijkstra_graph_dict[cell_id]["id"] = cell_id
             dijkstra_graph_dict[cell_id]["Vector_x"] = dijkstra_graph_dict[cell_id][
@@ -1019,13 +1016,13 @@ class RoutePlanner:
             dijkstra_graph_dict[cell_id]["Vector_y"] = dijkstra_graph_dict[cell_id][
                 self.config["vector_names"][1]
             ]
-            cases, neighbour_index = flatten_cases(str(cell_id), neighbour_graph)
+            cases, neighbour_index = flatten_cases(cell_id, neighbour_graph)
             dijkstra_graph_dict[cell_id]["case"] = np.array(cases)
             dijkstra_graph_dict[cell_id]["neighbourIndex"] = np.array(neighbour_index)
             neighbour_travel_legs = []
             neighbour_crossing_points = []
             for i, neighbour in enumerate(neighbour_index):
-                leg_id = str(cell_id) + "to" + str(neighbour)
+                leg_id = f"{cell_id} to {neighbour}"
                 if leg_id in self.neighbour_legs:
                     neighbour_travel_legs.append(self.neighbour_legs[leg_id][0])
                     neighbour_crossing_points.append(self.neighbour_legs[leg_id][1])
@@ -1037,7 +1034,7 @@ class RoutePlanner:
             )
             if path_index:
                 dijkstra_graph_dict[cell_id]["pathIndex"] = (
-                    route.source_waypoint.get_path_nodes(str(cell_id))
+                    route.source_waypoint.get_path_nodes(cell_id)
                 )
 
         return dijkstra_graph_dict
@@ -1098,7 +1095,7 @@ class RoutePlanner:
             else:
                 _id = wp_id[0]
 
-            wp.set_cellbox_indx(str(_id))
+            wp.set_cellbox_indx(_id)
             valid_wps.append(wp)
 
         return valid_wps

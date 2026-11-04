@@ -56,7 +56,7 @@ class SourceWaypoint(Waypoint):
         Args:
             indx (int): the index of the node to check
         """
-        return str(indx) in self.visited_nodes
+        return indx in self.visited_nodes
     
 
     def is_all_cells_visited(self,cells):
@@ -83,7 +83,7 @@ class SourceWaypoint(Waypoint):
 
         """
         for wp in self.end_wps:
-            if str(wp.get_cellbox_indx()) not in self.visited_nodes:
+            if wp.get_cellbox_indx() not in self.visited_nodes:
                 return False
         return True
 

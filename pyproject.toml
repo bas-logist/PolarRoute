@@ -30,7 +30,7 @@ keywords= ["Polar Science",
     "Marine Operations"]
 dynamic = ["version"]
 dependencies = [
-    "meshiphi",
+    "meshiphi @ git+https://github.com/bas-logist/MeshiPhi.git@code_opt",
     "dask",
     "geopandas>=1.0",
     "jsonschema",

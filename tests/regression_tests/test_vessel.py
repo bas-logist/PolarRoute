@@ -8,6 +8,10 @@ import pytest
 from pathlib import Path
 
 import logging
+
+from meshiphi.mesh_generation.environment_mesh import EnvironmentMesh
+
+from polar_route import VesselPerformanceModeller
 from .utils import (
     get_mesh_test_files,
     compare_cellbox_count,
@@ -47,8 +51,12 @@ def mesh_pair(request):
 
     with open(output_mesh_file, "r") as fp:
         old_mesh = json.load(fp)
+        old_mesh = VesselPerformanceModeller(old_mesh, old_mesh["config"]["vessel_info"])
+        old_mesh = old_mesh.to_json()
     with open(input_mesh_file, "r") as fp:
         input_mesh = json.load(fp)
+        input_mesh = EnvironmentMesh.load_from_json(input_mesh)
+        input_mesh = input_mesh.to_json()
 
     # Merge vessel config from reference into input mesh
     config = input_mesh.copy()
