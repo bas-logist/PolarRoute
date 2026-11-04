@@ -132,7 +132,7 @@ class VesselPerformanceModeller:
                 # Split all larger neighbours
                 for neighbour in acc_neighbours:
                     if neighbour.boundary.get_width() > in_cb.boundary.get_width():
-                        self.env_mesh.split_and_replace(str(neighbour.id))
+                        self.env_mesh.split_and_replace(neighbour.id)
                 # Extract new neighbours after splitting
                 neighbour_nodes = self.get_all_neighbours(in_node)
                 neighbours = [self.env_mesh.get_cellbox(nn) for nn in neighbour_nodes]
@@ -145,7 +145,7 @@ class VesselPerformanceModeller:
         Method to get a list of all neighbouring cell ids for a particular cell within the environmental mesh
 
         Args:
-            cell_id (str): Cell ID to find the neighbours around
+            cell_id (int): Cell ID to find the neighbours around
         Returns:
             neighbours (list): List of IDs of neighbouring cells
         """
@@ -153,7 +153,7 @@ class VesselPerformanceModeller:
         direction_obj = Direction()
         for direction in direction_obj.__dict__.values():
             neighbours.extend(
-                self.env_mesh.neighbour_graph.get_neighbours(cell_id, str(direction))
+                self.env_mesh.neighbour_graph.get_neighbours(cell_id, direction)
             )
 
         return neighbours

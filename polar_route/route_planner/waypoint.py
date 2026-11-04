@@ -15,7 +15,7 @@ class Waypoint:
     @classmethod
     def load_from_cellbox(cls, cellbox):
         obj = Waypoint(cellbox.get_bounds().getcy(), cellbox.get_bounds().getcx())
-        obj.set_cellbox_indx(str(cellbox.get_id()))
+        obj.set_cellbox_indx(cellbox.get_id())
         return obj
     
     def __init__(self, lat, long, cellbox_indx=-1, name=None):
