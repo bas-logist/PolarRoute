@@ -227,6 +227,7 @@ To make use of the `protected_area_speed_limit` set by MeshiPhi's ArcNet DataLoa
         "protected_area_speed_limit"
     ]
 }
+```
 
 Here, we have added a new field called `speed_limit_fields` which is a list of the speed limits that the vessel should respect. In this case, we have added `protected_area_speed_limit` to the list, as this is the field that MeshiPhi's ArcNet DataLoader sets in the linked example above.
 
