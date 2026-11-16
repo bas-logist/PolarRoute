@@ -34,7 +34,7 @@ vessel_mesh_json = vpm.to_json()
     * density (available via dataloaders: *density*)
     * u10, v10 (available via dataloaders: *era5_wind*)
 
-    see section Dataloaders in the [MeshiPhi docs](https://bas-amop.github.io/MeshiPhi/dataloaders/overview/) for more information on dataloaders
+    see section Dataloaders in the [MeshiPhi docs](https://bas-logist.github.io/MeshiPhi/dataloaders/overview/) for more information on dataloaders
 
     The vessel performance modeller will still run without these attributes but will assign default values from the
     configuration file where any data is missing.

@@ -14,7 +14,7 @@
 [![DOI](https://zenodo.org/badge/450086048.svg)](https://doi.org/10.5281/zenodo.21134233)
 
 
-PolarRoute is a long-distance maritime polar route planning package, able to take into account complex and changing environmental conditions. It allows the construction of optimised routes through three main stages: discrete modelling of the environmental conditions using a non-uniform mesh, the construction of mesh-optimal paths, and physics informed path smoothing. In order to account for different vehicle properties we construct a series of data-driven functions that can be applied to the environmental mesh to determine the speed limitations and fuel requirements for a given vessel and mesh cell. The environmental modelling component of this functionality is provided by the [MeshiPhi](https://github.com/bas-amop/MeshiPhi) library.
+PolarRoute is a long-distance maritime polar route planning package, able to take into account complex and changing environmental conditions. It allows the construction of optimised routes through three main stages: discrete modelling of the environmental conditions using a non-uniform mesh, the construction of mesh-optimal paths, and physics informed path smoothing. In order to account for different vehicle properties we construct a series of data-driven functions that can be applied to the environmental mesh to determine the speed limitations and fuel requirements for a given vessel and mesh cell. The environmental modelling component of this functionality is provided by the [MeshiPhi](https://github.com/bas-logist/MeshiPhi) library.
 
 ## Installation
 
@@ -41,7 +41,7 @@ pip install --group test
 
 ## Usage
 
-PolarRoute operates by creating an environmental mesh, adding vessel performance characteristics, and optimizing routes between waypoints. Environmental meshes are created using [MeshiPhi](https://github.com/bas-amop/MeshiPhi), which is installed automatically when installing PolarRoute.
+PolarRoute operates by creating an environmental mesh, adding vessel performance characteristics, and optimizing routes between waypoints. Environmental meshes are created using [MeshiPhi](https://github.com/bas-logist/MeshiPhi), which is installed automatically when installing PolarRoute.
 
 ### Quick Start (CLI)
 
@@ -84,7 +84,7 @@ For more details, see the [CLI documentation](https://bas-logist.github.io/Polar
 ## Required Data sources
 PolarRoute has been built to work with a variety of open-source atmospheric and oceanographic data sources. For testing and demonstration purposes it is also possible to generate artificial Gaussian Random Field data.
 
-A full list of supported data sources and their associated dataloaders is given in the  'Dataloader Overview' section of the [MeshiPhi manual](https://bas-amop.github.io/MeshiPhi/dataloaders/overview/)
+A full list of supported data sources and their associated dataloaders is given in the  'Dataloader Overview' section of the [MeshiPhi manual](https://bas-logist.github.io/MeshiPhi/dataloaders/overview/)
 
 ## Developers
 Samuel Hall, Harrison Abbot, Ayat Fekry, George Coombs, David Wyld, Thomas Zwagerman, Jonathan Smith, Maria Fox, and James Byrne

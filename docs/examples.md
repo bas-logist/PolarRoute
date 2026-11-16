@@ -59,7 +59,7 @@ from creating the mesh through to optimising a route within it.
 Real world data has been used to generate these meshes around the coast of Antarctica. This data is publicly available,
 however is not included here to avoid violating data sharing policies. Instead, we provide a mesh file after the 'create_mesh' stage 
 since that is a derived product. The data files used to construct the mesh can be seen in the `data_sources` field of
-the config contained within the provided mesh. See [Dataloaders](https://bas-amop.github.io/MeshiPhi/dataloaders/overview/)
+the config contained within the provided mesh. See [Dataloaders](https://bas-logist.github.io/MeshiPhi/dataloaders/overview/)
 in the MeshiPhi docs for more info on each source of data that PolarRoute currently supports.
 
 * :material-download: [Real-world data 1](https://raw.githubusercontent.com/bas-logist/PolarRoute/main/docs/assets/examples/example_4.zip)
