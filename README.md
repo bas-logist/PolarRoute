@@ -79,7 +79,7 @@ rp.compute_routes(waypoints_path)
 routes_json = rp.to_json()
 ```
 
-For more details, see the [CLI documentation](https://bas-logist.github.io/PolarRoute/cli/), [examples](https://bas-logist.github.io/PolarRoute/examples/), and the [examples/](examples/) directory.
+For more details, see the [CLI documentation](https://bas-logist.github.io/PolarRoute/cli/), [examples](https://bas-logist.github.io/PolarRoute/examples/), and the [examples/](https://github.com/bas-logist/PolarRoute/tree/main/examples) directory.
 
 ## Required Data sources
 PolarRoute has been built to work with a variety of open-source atmospheric and oceanographic data sources. For testing and demonstration purposes it is also possible to generate artificial Gaussian Random Field data.
@@ -95,7 +95,7 @@ This software is licensed under a MIT license, but request users cite our public
 
 Jonathan D. Smith, Samuel Hall, George Coombs, Ayat Fekry, Michael A. S. Thorne, Derek Long, Maria Fox (2025) Path-Planning on a Spherical Surface with Disturbances and Exclusion Zones. Journal of Artificial Intelligence Research 82 (2025), <https://doi.org/10.1613/jair.1.16746>
 
-For more information please see the attached ``LICENSE`` file.
+For more information please see the attached [`LICENSE`](https://github.com/bas-logist/PolarRoute/tree/main/LICENSE) file.
 
 [version]: https://img.shields.io/PolarRoute/v/datadog-metrics.svg?style=flat-square
 [downloads]: https://img.shields.io/PolarRoute/dm/datadog-metrics.svg?style=flat-square
