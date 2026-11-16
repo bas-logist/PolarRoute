@@ -20,7 +20,7 @@ positional arguments:
 config : A configuration file detailing how to build the digital environment. JSON parsable
 ```
 
-The format of the required *config.json* file can be found in the [Configuration - Mesh Construction](https://bas-amop.github.io/MeshiPhi/config/mesh_construction/) section of the [MeshiPhi documentation](https://bas-amop.github.io/MeshiPhi/).
+The format of the required *config.json* file can be found in the [Configuration - Mesh Construction](https://bas-logist.github.io/MeshiPhi/config/mesh_construction/) section of the [MeshiPhi documentation](https://bas-logist.github.io/MeshiPhi/).
 There are also example configuration files available in the directory `examples/environment_config/grf_example.config.json`
 
 optional arguments:
@@ -48,7 +48,7 @@ mesh : A digital environment file.
 ```
 
 The format for the required *vessel.json* file can be found in the :ref:`configuration - vessel performance modeller` section of the documentation.
-The required *mesh.json* file can be created using the *create_mesh* command from [**MeshiPhi**](https://github.com/bas-amop/MeshiPhi).
+The required *mesh.json* file can be created using the *create_mesh* command from [**MeshiPhi**](https://github.com/bas-logist/MeshiPhi).
 
 optional arguments are
 
@@ -195,9 +195,9 @@ optional arguments:
 
 ## Plotting
 
-Meshes produced at any stage in the route planning process can be visualised using the `plot_mesh` cli command from [**GeoPlot**](https://github.com/antarctica/GeoPlot).
+Meshes produced at any stage in the route planning process can be visualised using the `plot_mesh` cli command from [**GeoPlot**](https://github.com/bas-logist/GeoPlot).
 Meshes and routes can also be plotted in other GIS software such as QGIS by exporting the mesh to a commonly used format such
-as .geojson or .tif using the export_mesh command described in the [**MeshiPhi**](https://github.com/bas-amop/MeshiPhi) docs.
+as .geojson or .tif using the export_mesh command described in the [**MeshiPhi**](https://github.com/bas-logist/MeshiPhi) docs.
 
 ```sh
 plot_mesh <mesh.json>

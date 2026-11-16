@@ -29,6 +29,6 @@ pip install --group test
 
 ## Installing GeoPlot
 
-Plotting functionality for the outputs of PolarRoute is provided by the [**GeoPlot**](https://github.com/antarctica/GeoPlot) package, also developed at BAS.
+Plotting functionality for the outputs of PolarRoute is provided by the [**GeoPlot**](https://github.com/bas-logist/GeoPlot) package, also developed at BAS.
 
 Geoplot is available from PyPI and can be installed by running: `pip install bas-geoplot`
