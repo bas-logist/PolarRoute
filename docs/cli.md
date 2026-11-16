@@ -195,7 +195,7 @@ optional arguments:
 
 ## Plotting
 
-Meshes produced at any stage in the route planning process can be visualised using the `plot_mesh` cli command from [**GeoPlot**](https://github.com/antarctica/GeoPlot).
+Meshes produced at any stage in the route planning process can be visualised using the `plot_mesh` cli command from [**GeoPlot**](https://github.com/bas-logist/GeoPlot).
 Meshes and routes can also be plotted in other GIS software such as QGIS by exporting the mesh to a commonly used format such
 as .geojson or .tif using the export_mesh command described in the [**MeshiPhi**](https://github.com/bas-logist/MeshiPhi) docs.
 

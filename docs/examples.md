@@ -6,7 +6,7 @@ The CLI provides multiple entry-points through which the PolarRoute package can 
 :ref:`Command Line Interface <cli>` section of these docs.
 
 To summarise, the basic process is to create an environment mesh, add vehicle performance characteristics to each
-cell in that mesh and then find an optimal route between waypoints located within that mesh. At any stage, [**GeoPlot**](https://github.com/antarctica/GeoPlot)
+cell in that mesh and then find an optimal route between waypoints located within that mesh. At any stage, [**GeoPlot**](https://github.com/bas-logist/GeoPlot)
 can be used to visualise the outputs.
 
 ```sh
